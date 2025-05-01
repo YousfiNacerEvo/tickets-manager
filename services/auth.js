@@ -1,0 +1,34 @@
+export async function Login(email, password) {
+  try {
+    const response = await fetch("http://localhost:5000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    console.log("Login successful:", data["session"]["access_token"]);
+    // Stockage du token dans un cookie sécurisé
+    document.cookie = `token=${data["session"]["access_token"]}; path=/; secure; samesite=strict`;
+    localStorage.setItem("token", data["session"]["access_token"]);
+    return data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
+export function Logout() {
+  // Suppression du cookie
+  document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+}
+
+export function isAuthenticated() {
+  return document.cookie.includes("token=");
+}
