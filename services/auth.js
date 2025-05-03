@@ -1,7 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ;
 
 export async function Login(email, password) {
   try {
+    console.log("api url", API_URL);
     const response = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: {
