@@ -41,8 +41,15 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 console.log("Supabase URL:", process.env.SUPABASE_URL);
 console.log("Supabase Key:", supabaseKey);
 const supabase = createClient(supabaseUrl, supabaseKey)
-
-app.use(cors());
+const corsOptions = {
+  origin: [
+    "https://tickets-manager-kappa.vercel.app/", // URL de Vercel
+    "http://localhost:3000", // Pour le dev local
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Middleware pour vérifier le token JWT
@@ -228,7 +235,7 @@ app.get('/states', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Erreur lors de la récupération des statistiques' });
   }
 });
-app.listen(5000, () => {
+app.listen(10000, () => {
   console.log('Server is running on http://localhost:5000');
 })
 

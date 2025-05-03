@@ -10,7 +10,7 @@ export async function getTicketById(ticketId, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
+    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets/${ticketId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -50,7 +50,7 @@ export async function getAllTickets() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL}/tickets`, {
+    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -76,7 +76,7 @@ export async function updateTicket(ticketId, ticketData) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
+    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets/${ticketId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ export async function uploadTicketImage(imageFile) {
   formData.append('image', imageFile);
 
   try {
-    const response = await fetch(`${API_URL}/tickets/upload`, {
+    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -119,7 +119,7 @@ export async function uploadTicketImage(imageFile) {
     if (!response.ok) throw new Error('Erreur lors de l\'upload de l\'image.');
 
     const data = await response.json();
-    return `http://localhost:5000${data.imageUrl}`;
+    return `https://gestion-ticket-back-3.onrender.com${data.imageUrl}`;
   } catch (error) {
     console.error('Erreur backend:', error);
     throw error;
@@ -147,7 +147,7 @@ export async function sendTicketToBackend(ticketData) {
       ...(imageUrl && { image: imageUrl }),
     };
 
-    const response = await fetch(`${API_URL}/tickets`, {
+    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ export async function getTicketStats() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL}/tickets`, {
+    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -241,7 +241,7 @@ export async function getDashboardState() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
   console.log("request envoyeeeeeeeeeeee")
   try {
-    const response = await fetch(`${API_URL}/states`, {
+    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/states`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
