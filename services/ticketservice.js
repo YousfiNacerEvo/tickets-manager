@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = "https://gestion-ticket-back-3.onrender.com"
 
 /**
  * Récupère toutes les informations d'un ticket par son ID
