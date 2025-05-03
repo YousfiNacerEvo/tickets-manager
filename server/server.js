@@ -1,13 +1,46 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
-require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: function (req, file, cb) {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
+
+// Create uploads directory if it doesn't exist
+const fs = require('fs');
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
 
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
+console.log("Supabase URL:", process.env.SUPABASE_URL);
+console.log("Supabase Key:", supabaseKey);
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 app.use(cors());
@@ -100,6 +133,7 @@ app.get('/tickets/:id', authenticateToken, async (req, res) => {
 });
 app.put('/tickets/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
+  console.log("Données du ticket à mettre à jour:", req.body);
   const { title, description, priority, type, status, clientFirstName, clientLastName, clientPhone, clientEmail, image, waitingClient } = req.body;
   const { data, error } = await supabase
     .from('tickets')
@@ -125,6 +159,76 @@ app.put('/tickets/:id', authenticateToken, async (req, res) => {
   res.json(data);
 });
 
+// Image upload endpoint
+app.post('/tickets/upload', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Get the file path relative to the server
+    const imageUrl = `/uploads/${req.file.filename}`;
+    
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).json({ error: 'Error uploading image' });
+  }
+});
+
+app.post('/add-account', async (req, res) => {
+  const { email, password } = req.body;
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+  if (error) {
+    return res.status(400).json({ error: error.message });
+  }
+  res.json(data);
+});
+
+
+app.get('/states', authenticateToken, async (req, res) => {
+  try {
+    console.log('Début de la récupération des statistiques...');
+    
+    const { data, error } = await supabase
+      .from('tickets')
+      .select('*');
+    
+    console.log("Données brutes de Supabase:", data);
+    console.log("Erreur Supabase:", error);
+
+    if (error) {
+      console.error('Erreur Supabase:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (!data) {
+      console.warn('Aucune donnée reçue de Supabase');
+      return res.status(200).json({
+        total: 0,
+        resolved: 0,
+        closed: 0,
+        pending: 0
+      });
+    }
+    
+    const stats = {
+      total: data.length,
+      resolved: data.filter(ticket => ticket.status === 'closed').length,
+      pending: data.filter(ticket => ticket.status === 'in_progress').length,
+      open: data.filter(ticket => ticket.status === 'open').length
+    };
+
+    console.log("Statistiques calculées:", stats);
+    res.json(stats);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques' });
+  }
+});
 app.listen(5000, () => {
   console.log('Server is running on http://localhost:5000');
 })

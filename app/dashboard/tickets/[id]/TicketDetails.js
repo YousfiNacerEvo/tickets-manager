@@ -1,13 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { updateTicket, uploadTicketImage } from '@/services/ticketservice';
 
 export default function TicketDetails({ ticket }) {
-  ticket = ticket[0]; // Assurez-vous que ticket est un tableau et récupérez le premier élément
+  ticket = ticket[0]; 
+  console.log('Ticketqdkfkjqdmsf:', ticket);
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const fileInputRef = useRef();
+  
   const [formData, setFormData] = useState({
     title: ticket.title,
     description: ticket.description,
@@ -19,7 +25,26 @@ export default function TicketDetails({ ticket }) {
     clientLastName: ticket.client_last_name,
     clientPhone: ticket.client_phone,
     clientEmail: ticket.client_email,
+    image: ticket.image,
   });
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        const imageUrl = await uploadTicketImage(file);
+        setFormData(prev => ({ ...prev, image: imageUrl }));
+      } catch (error) {
+        console.error('Erreur lors de l\'upload de l\'image:', error);
+        alert('Erreur lors de l\'upload de l\'image');
+      }
+    }
+  };
+
+  const handleImageClick = (image) => {
+    setSelectedImage(image);
+    setIsImageModalOpen(true);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -33,28 +58,23 @@ export default function TicketDetails({ ticket }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+      const { title, description, priority, status, type, clientFirstName, clientLastName, clientPhone, clientEmail, image } = formData;
+      const updatedTicket = {
+        title,
+        description,
+        priority,
+        status,
+        type,
+        clientFirstName,
+        clientLastName,
+        clientPhone,
+        clientEmail,
+        image,
+      };
+      const response = await updateTicket(ticket.id, updatedTicket);
+      if (!response) throw new Error('Erreur lors de la mise à jour du ticket.');
+      alert('Ticket mis à jour avec succès !');
 
-      const response = await fetch(`http://localhost:5000/tickets/${ticket.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          client_first_name: formData.clientFirstName,
-          client_last_name: formData.clientLastName,
-          client_phone: formData.clientPhone,
-          client_email: formData.clientEmail,
-        }),
-      });
-
-      if (response.status === 401) throw new Error('Non autorisé : token invalide ou expiré.');
-      if (!response.ok) throw new Error('Erreur lors de la mise à jour du ticket.');
-
-      const updatedTicket = await response.json();
       setIsEditing(false);
       
       // Rafraîchir la page actuelle et la page de liste des tickets
@@ -77,6 +97,7 @@ export default function TicketDetails({ ticket }) {
               <button
                 onClick={() => router.back()}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors duration-200 flex items-center gap-2"
+                disabled={isLoading}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -120,9 +141,9 @@ export default function TicketDetails({ ticket }) {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="low">Basse</option>
-                    <option value="medium">Moyenne</option>
-                    <option value="high">Haute</option>
+                    <option value="low">Low</option>
+                    <option value="medium">medium</option>
+                    <option value="high">high</option>
                   </select>
                 ) : (
                   <span className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -144,9 +165,9 @@ export default function TicketDetails({ ticket }) {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="open">Ouvert</option>
-                    <option value="in_progress">En cours</option>
-                    <option value="closed">Fermé</option>
+                    <option value="open">open</option>
+                    <option value="in_progress">in_progress</option>
+                    <option value="closed">closed</option>
                   </select>
                 ) : (
                   <span className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -256,41 +277,123 @@ export default function TicketDetails({ ticket }) {
                     <p className="text-gray-900">{ticket.client_phone}</p>
                   )}
                 </div>
+
+                <div className="md:col-span-2 flex items-center gap-4 mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Waiting Client</label>
+                  {isEditing ? (
+                    <input
+                      type="checkbox"
+                      name="waitingClient"
+                      checked={formData.waitingClient || false}
+                      onChange={handleChange}
+                      className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                  ) : (
+                    <span className="ml-2 text-gray-900 font-semibold">{formData.waitingClient ? 'Oui' : 'Non'}</span>
+                  )}
+                </div>
               </div>
             </div>
 
-            {isEditing && (
-              <div className="flex justify-end space-x-4 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors duration-200"
-                  disabled={isLoading}
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Enregistrement...
-                    </>
-                  ) : (
-                    'Enregistrer'
-                  )}
-                </button>
+            {/* Image Section */}
+            <div className="border-t pt-6">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Image du ticket</h2>
+              <div className="flex flex-col items-center">
+                {isEditing ? (
+                  <div className="w-full max-w-md">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors"
+                         onClick={() => fileInputRef.current.click()}>
+                      {formData.image ? (
+                        <img 
+                          src={formData.image} 
+                          alt="Ticket" 
+                          className="max-h-60 mx-auto rounded-lg shadow"
+                          onClick={() => handleImageClick(formData.image)}
+                        />
+                      ) : (
+                        <div className="text-gray-500">
+                          <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p className="mt-2">Cliquez pour changer l'image</p>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                    />
+                  </div>
+                ) : (
+                  formData.image && (
+                    <div className="w-full max-w-md">
+                      <img 
+                        src={formData.image} 
+                        alt="Ticket" 
+                        className="max-h-60 mx-auto rounded-lg shadow cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => handleImageClick(formData.image)}
+                      />
+                    </div>
+                  )
+                )}
               </div>
-            )}
+            </div>
+
+            <div className="flex justify-end gap-4">
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/tickets')}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Enregistrement...
+                  </>
+                ) : (
+                  'Enregistrer'
+                )}
+              </button>
+            </div>
           </form>
         </div>
       </div>
+
+      {/* Image Modal */}
+      {isImageModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Image du ticket</h3>
+              <button
+                onClick={() => setIsImageModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <img 
+              src={selectedImage} 
+              alt="Ticket en grand format" 
+              className="max-w-full max-h-[70vh] object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

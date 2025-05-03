@@ -32,3 +32,24 @@ export function Logout() {
 export function isAuthenticated() {
   return document.cookie.includes("token=");
 }
+
+export async function addAccount(email, password) {
+  try {
+    const response = await fetch("http://localhost:5000/add-account", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    return data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}

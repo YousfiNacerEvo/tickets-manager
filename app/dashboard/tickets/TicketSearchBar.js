@@ -33,7 +33,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
         >
           <option value="">All</option>
           <option value="open">Open</option>
-          <option value="pending">Pending</option>
+          <option value="in_progress">in_progress</option>
           <option value="closed">Closed</option>
         </select>
       </div>

@@ -39,6 +39,8 @@ const stepTitles = [
 export default function CreateTicket() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
   const [ticket, setTicket] = useState({
     title: '',
     description: '',
@@ -86,24 +88,26 @@ export default function CreateTicket() {
   const handleNext = () => setStep(step + 1);
   const handlePrev = () => setStep(step - 1);
 
- 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setMessage({ type: '', text: '' });
+    
     // Générer un id unique pour le ticket
     const ticketWithId = { ...ticket };
     // Envoyer au backend
     try {
       const backendResponse = await sendTicketToBackend(ticketWithId);
       console.log('Réponse backend:', backendResponse);
+      setMessage({ type: 'success', text: 'Ticket créé avec succès !' });
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
     } catch (err) {
-      alert('Erreur lors de l\'envoi du ticket au backend');
+      setMessage({ type: 'error', text: 'Erreur lors de l\'envoi du ticket au backend' });
+    } finally {
+      setIsLoading(false);
     }
-    // Simulation : on récupère les infos du ticket créé (par exemple avec l'id généré)
-    const ticketInfo = await getTicketById(ticketWithId.id);
-    console.log('Ticket créé:', ticketWithId);
-    console.log('Ticket récupéré (mock):', ticketInfo);
-    router.push('/dashboard');
   };
 
   return (
@@ -119,6 +123,13 @@ export default function CreateTicket() {
           </button>
           <TicketStepper step={step} steps={steps} />
           <StepTitle title={stepTitles[step-1].title} desc={stepTitles[step-1].desc} />
+          {message.text && (
+            <div className={`mb-4 p-4 rounded-lg ${
+              message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+              {message.text}
+            </div>
+          )}
           <form onSubmit={handleSubmit}>
             {step === 1 && (
               <StepTicketInfo ticket={ticket} handleChange={handleChange} handleNext={handleNext} />
@@ -127,7 +138,16 @@ export default function CreateTicket() {
               <StepClientInfo ticket={ticket} handleChange={handleChange} handleNext={handleNext} handlePrev={handlePrev} />
             )}
             {step === 3 && (
-              <StepAttachment imagePreview={imagePreview} fileInputRef={fileInputRef} handleImageChange={handleImageChange} handleDrop={handleDrop} handleDragOver={handleDragOver} handlePrev={handlePrev} handleSubmit={handleSubmit} />
+              <StepAttachment 
+                imagePreview={imagePreview} 
+                fileInputRef={fileInputRef} 
+                handleImageChange={handleImageChange} 
+                handleDrop={handleDrop} 
+                handleDragOver={handleDragOver} 
+                handlePrev={handlePrev} 
+                handleSubmit={handleSubmit}
+                isLoading={isLoading}
+              />
             )}
           </form>
         </div>

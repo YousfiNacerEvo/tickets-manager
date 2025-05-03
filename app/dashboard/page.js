@@ -1,89 +1,104 @@
 "use client"
-import React from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from "react";
+import { getTicketStats } from "@/services/ticketservice";
+import { getDashboardState } from "@/services/ticketservice";
+import { FaTicketAlt, FaCheckCircle, FaHourglassHalf, FaChartBar, FaUserCircle, FaHome } from "react-icons/fa";
+import Link from "next/link";
 
-export default function Dashboard() {
-  const router = useRouter();
-  // Données fictives pour l'exemple
-  const username = "username";
-  const stats = {
-    closed: 32,
-    pending: 20,
-    open: 10,
-  };
+export default function DashboardHome() {
+  const [stats, setStats] = useState({
+    total: 0,
+    resolved: 0,
+    pending: 0,
+    open: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [userEmail, setUserEmail] = useState('');
+
+  useEffect(() => {
+    async function fetchStats() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getDashboardState();
+        console.log("sttaattteee",data);
+        setStats(data);
+        // Récupérer l'email de l'utilisateur depuis le localStorage
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+          setUserEmail(user.email);
+        }
+      } catch (err) {
+        setError("Erreur lors du chargement des statistiques");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-[#181C26]">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="bg-white rounded px-4 py-1 font-bold text-sm">LOGO</div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="text-gray-300 hover:text-white">
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Modern Navbar */}
+      <nav className="w-full bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm flex items-center justify-between px-8 py-3 sticky top-0 z-20">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition">
+            <FaHome className="text-xl" />
+            <span className="font-medium">Dashboard</span>
+          </Link>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="relative group">
+            <button className="text-gray-500 hover:text-blue-600 transition text-2xl">
+              <FaUserCircle />
             </button>
-            <button className="text-gray-300 hover:text-white">
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-            </button>
-            <div className="w-8 h-8 rounded-full bg-purple-400 flex items-center justify-center text-white font-bold">M</div>
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block">
+              <div className="px-4 py-2 text-sm text-gray-700">
+                {userEmail}
+              </div>
+            </div>
           </div>
         </div>
-        <div className="bg-blue-500 h-2"></div>
-      </header>
+      </nav>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center px-4 pb-8 text-black">
-        <div className="w-full max-w-5xl mt-8">
-         
-          {/* Stats */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="flex-1 border border-gray-300 rounded-lg bg-white p-6 flex flex-col items-center justify-center">
-              <span className="text-4xl font-bold">{stats.closed}</span>
-              <span className="text-green-600 font-semibold ml-1">Closed</span> <span className="text-gray-700">tickets</span>
-            </div>
-            <div className="flex-1 border border-gray-300 rounded-lg bg-white p-6 flex flex-col items-center justify-center">
-              <span className="text-4xl font-bold">{stats.pending}</span>
-              <span className="text-yellow-500 font-semibold ml-1">Pending</span> <span className="text-gray-700">tickets</span>
-            </div>
-            <div className="flex-1 border rounded-lg border-gray-300 bg-white p-6 flex flex-col items-center justify-center">
-              <span className="text-4xl font-bold">{stats.open}</span>
-              <span className="text-red-500 font-semibold ml-1">Open</span> <span className="text-gray-700">tickets</span>
-            </div>
-          </div>
-
-          
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-            {/* Create ticket */}
-            <div
-              onClick={() => router.push('/dashboard/create')}
-              className="border border-gray-300 rounded-xl bg-blue-50 hover:bg-blue-100 cursor-pointer p-8 flex flex-col items-center transition group"
-            >
-              <span className="text-xl font-semibold mb-4">Create ticket</span>
-              <svg className="w-20 h-20 text-blue-400 group-hover:text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 8v8M8 12h8"/>
-              </svg>
-            </div>
-            {/* Manage tickets */}
-            <div
-              onClick={() => router.push('/dashboard/tickets')}
-              className="border border-gray-300 rounded-xl bg-green-50 hover:bg-green-100 cursor-pointer p-8 flex flex-col items-center transition group"
-            >
-              <span className="text-xl font-semibold mb-4">Manage tickets</span>
-              <svg className="w-20 h-20 text-green-400 group-hover:text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <rect x="6" y="8" width="12" height="12" rx="2"/>
-                <path d="M9 12h6M9 16h6"/>
-              </svg>
-            </div>
-          </div>
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-10">
+        {error && <div className="text-red-600 mb-4">{error}</div>}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8 mb-12">
+          <StatCard title="Tickets" value={stats.total} icon={<FaTicketAlt />} color="blue" loading={loading} />
+          <StatCard title="Résolus" value={stats.resolved} icon={<FaCheckCircle />} color="green" loading={loading} />
+          <StatCard title="En attente" value={stats.pending} icon={<FaHourglassHalf />} color="yellow" loading={loading} />
+          <StatCard title="Ouverts" value={stats.open} icon={<FaChartBar />} color="purple" loading={loading} />
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-300 text-center py-4 text-gray-700 font-medium">Footer</footer>
+      {/* Minimal Footer */}
+      <footer className="w-full bg-white/80 border-t border-gray-100 py-4 text-center text-gray-500 text-sm font-medium">
+        TicketApp &copy; {new Date().getFullYear()} &middot; <a href="#" className="text-blue-600 hover:underline ml-1">Support</a>
+      </footer>
+    </div>
+  );
+}
+
+function StatCard({ title, value, icon, color = "blue", loading }) {
+  const colorMap = {
+    blue: "text-blue-600 border-blue-600 bg-blue-50 hover:bg-blue-100",
+    green: "text-green-600 border-green-600 bg-green-50 hover:bg-green-100",
+    yellow: "text-yellow-500 border-yellow-500 bg-yellow-50 hover:bg-yellow-100",
+    purple: "text-purple-600 border-purple-600 bg-purple-50 hover:bg-purple-100",
+  };
+  return (
+    <div className={`rounded-2xl shadow-md p-8 flex items-center gap-6 border-b-4 transition-all duration-200 group ${colorMap[color]}`}
+      style={{ minHeight: 120 }}
+    >
+      <div className={`text-4xl ${colorMap[color]} group-hover:scale-110 transition-transform`}>{icon}</div>
+      <div>
+        <div className="text-gray-800 font-bold text-lg mb-1">{title}</div>
+        <div className="text-3xl font-extrabold tracking-tight">
+          {loading ? <span className="animate-pulse text-gray-300">...</span> : value}
+        </div>
+      </div>
     </div>
   );
 }
