@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const { createClient } = require('@supabase/supabase-js');
-const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 

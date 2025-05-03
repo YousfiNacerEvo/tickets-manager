@@ -1,6 +1,8 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 export async function Login(email, password) {
   try {
-    const response = await fetch("http://localhost:5000/login", {
+    const response = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -35,7 +37,7 @@ export function isAuthenticated() {
 
 export async function addAccount(email, password) {
   try {
-    const response = await fetch("http://localhost:5000/add-account", {
+    const response = await fetch(`${API_URL}/add-account`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

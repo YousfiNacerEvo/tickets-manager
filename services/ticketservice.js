@@ -1,3 +1,5 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 /**
  * Récupère toutes les informations d'un ticket par son ID
  * @param {string|number} ticketId
@@ -8,7 +10,7 @@ export async function getTicketById(ticketId, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`http://localhost:5000/tickets/${ticketId}`, {
+    const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -48,7 +50,7 @@ export async function getAllTickets() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch('http://localhost:5000/tickets', {
+    const response = await fetch(`${API_URL}/tickets`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -74,7 +76,7 @@ export async function updateTicket(ticketId, ticketData) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`http://localhost:5000/tickets/${ticketId}`, {
+    const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -106,7 +108,7 @@ export async function uploadTicketImage(imageFile) {
   formData.append('image', imageFile);
 
   try {
-    const response = await fetch('http://localhost:5000/tickets/upload', {
+    const response = await fetch(`${API_URL}/tickets/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -145,7 +147,7 @@ export async function sendTicketToBackend(ticketData) {
       ...(imageUrl && { image: imageUrl }),
     };
 
-    const response = await fetch('http://localhost:5000/tickets', {
+    const response = await fetch(`${API_URL}/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -170,7 +172,7 @@ export async function getTicketStats() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch('http://localhost:5000/tickets', {
+    const response = await fetch(`${API_URL}/tickets`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -239,7 +241,7 @@ export async function getDashboardState() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
   console.log("request envoyeeeeeeeeeeee")
   try {
-    const response = await fetch('http://localhost:5000/states', {
+    const response = await fetch(`${API_URL}/states`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
