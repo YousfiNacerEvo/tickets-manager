@@ -1,18 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function TicketCard({ ticket }) {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleClick = () => {
+    setIsLoading(true);
     router.push(`/dashboard/tickets/${ticket.id}`);
   };
 
   return (
     <div 
       onClick={handleClick}
-      className="bg-white rounded-xl shadow p-6 flex flex-col gap-2 border border-gray-200 hover:shadow-lg hover:border-blue-500 cursor-pointer transition-all duration-200"
+      className="bg-white rounded-xl shadow p-6 flex flex-col gap-2 border border-gray-200 hover:shadow-lg hover:border-blue-500 cursor-pointer transition-all duration-200 relative"
     >
+      {isLoading && (
+        <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-xl">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      )}
       <div className="flex flex-wrap justify-between items-center mb-2">
         <div className="font-bold text-lg text-blue-700">#{ticket.id}</div>
         <div className="text-xs text-gray-500">Créé le {ticket.updated_at ? new Date(ticket.updated_at).toLocaleString() : '-'}</div>

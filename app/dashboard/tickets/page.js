@@ -11,6 +11,7 @@ export default function TicketsListPage() {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({ id: '', user: '', status: '', priority: '', type: '' });
   const [currentPage, setCurrentPage] = useState(1);
+  const [loadingTicketId, setLoadingTicketId] = useState(null);
   const ticketsPerPage = 10;
   const router = useRouter();
 
@@ -96,6 +97,11 @@ export default function TicketsListPage() {
     }
   };
 
+  const handleTicketClick = (ticketId) => {
+    setLoadingTicketId(ticketId);
+    router.push(`/dashboard/tickets/${ticketId}`);
+  };
+
   return (
     <div className="min-h-screen relative">
       {/* Background pattern */}
@@ -144,9 +150,17 @@ export default function TicketsListPage() {
                     {currentTickets.map((ticket) => (
                       <tr 
                         key={ticket.id}
-                        className="hover:bg-gray-50/80 cursor-pointer transition-colors duration-150"
-                        onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                        className="hover:bg-gray-50/80 cursor-pointer transition-colors duration-150 relative"
+                        onClick={() => handleTicketClick(ticket.id)}
                       >
+                        {loadingTicketId === ticket.id && (
+                          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                              <span className="text-sm text-gray-600">Chargement...</span>
+                            </div>
+                          </div>
+                        )}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{ticket.id}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {ticket.title}
