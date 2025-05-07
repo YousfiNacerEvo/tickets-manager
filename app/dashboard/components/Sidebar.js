@@ -3,12 +3,12 @@ import { FaPlus, FaList, FaUserPlus, FaChartBar, FaHome } from "react-icons/fa";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+
 const menu = [
-  { label: "Dashboard", icon: <FaHome />, href: "/dashboard" },
+  { label: "Dashboard", icon: <FaChartBar />, href: "/dashboard" },
   { label: "Create Ticket", icon: <FaPlus />, href: "/dashboard/create" },
   { label: "Ticket Manager", icon: <FaList />, href: "/dashboard/tickets" },
   { label: "Add Account", icon: <FaUserPlus />, href: "/dashboard/add-account" },
-  { label: "Ticket Statistics", icon: <FaChartBar />, href: "/dashboard/statistics" },
 ];
 
 export default function Sidebar() {
