@@ -29,7 +29,7 @@ export default function StatisticsPage() {
   const [interval, setInterval] = useState('day'); // 'day' | 'month' | 'year'
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'http://localhost:10000';
+  const API_URL = "https://gestion-ticket-back-3.onrender.com";
 
 useEffect(() => {
   async function fetchData() {
