@@ -9,7 +9,14 @@ export default function TicketsListPage() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({ id: '', user: '', status: '', priority: '', type: '' });
+  const [filters, setFilters] = useState({ 
+    id: '', 
+    client: '', 
+    station: '', 
+    status: '', 
+    priority: '', 
+    type: '' 
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [loadingTicketId, setLoadingTicketId] = useState(null);
   const ticketsPerPage = 10;
@@ -21,6 +28,7 @@ export default function TicketsListPage() {
       setError(null);
       try {
         const data = await getAllTickets();
+        console.log('Tickets data:', data);
         const sortedTickets = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setTickets(sortedTickets);
       } catch (err) {
@@ -30,18 +38,26 @@ export default function TicketsListPage() {
       }
     }
     fetchTickets();
+
+    // Ajouter un écouteur pour le focus de la fenêtre
+    const handleFocus = () => {
+      fetchTickets();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const filteredTickets = tickets.filter(ticket => {
     const matchId = filters.id ? String(ticket.id).includes(filters.id) : true;
-    const fullName = `${ticket.client_first_name || ''} ${ticket.client_last_name || ''}`.trim().toLowerCase();
-    const matchUser = filters.user
-      ? fullName.includes(filters.user.toLowerCase())
-      : true;
+    const matchClient = filters.client ? ticket.client === filters.client : true;
+    const matchStation = filters.station ? ticket.station === filters.station : true;
     const matchStatus = filters.status ? ticket.status === filters.status : true;
     const matchPriority = filters.priority ? ticket.priority === filters.priority : true;
     const matchType = filters.type ? ticket.type === filters.type : true;
-    return matchId && matchUser && matchStatus && matchPriority && matchType;
+    return matchId && matchClient && matchStation && matchStatus && matchPriority && matchType;
   });
 
   const indexOfLastTicket = currentPage * ticketsPerPage;
@@ -139,6 +155,7 @@ export default function TicketsListPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priorité</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
@@ -166,7 +183,10 @@ export default function TicketsListPage() {
                           {ticket.title}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {ticket.client_first_name} {ticket.client_last_name}
+                          {ticket.client}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ticket.station}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
@@ -225,4 +245,4 @@ export default function TicketsListPage() {
       </div>
     </div>
   );
-} 
+}

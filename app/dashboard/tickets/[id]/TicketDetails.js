@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateTicket, uploadTicketImage } from '@/services/ticketservice';
@@ -20,9 +19,9 @@ export default function TicketDetails({ ticket }) {
     priority: ticket.priority,
     status: ticket.status,
     type: ticket.type,
-    waitingClient: ticket.waitingClient,
-    clientFirstName: ticket.client_first_name,
-    clientLastName: ticket.client_last_name,
+    waitingClient: ticket.waiting_client,
+    client: ticket.client,
+    station: ticket.station,
     clientPhone: ticket.client_phone,
     clientEmail: ticket.client_email,
     image: ticket.image,
@@ -58,28 +57,37 @@ export default function TicketDetails({ ticket }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { title, description, priority, status, type, clientFirstName, clientLastName, clientPhone, clientEmail, image } = formData;
+      const { title, description, priority, status, type, client, station, clientPhone, clientEmail, image, waitingClient } = formData;
       const updatedTicket = {
         title,
         description,
         priority,
         status,
         type,
-        clientFirstName,
-        clientLastName,
+        client,
+        station,
         clientPhone,
         clientEmail,
         image,
+        waitingClient: waitingClient || false
       };
+      
       const response = await updateTicket(ticket.id, updatedTicket);
       if (!response) throw new Error('Erreur lors de la mise à jour du ticket.');
+      
+      // Mettre à jour le ticket local avec les nouvelles données
+      ticket = response[0];
+      
       alert('Ticket mis à jour avec succès !');
-
       setIsEditing(false);
       
-      // Rafraîchir la page actuelle et la page de liste des tickets
-      await router.refresh();
-      router.push('/dashboard/tickets');
+      // Forcer le rafraîchissement des données
+      router.refresh();
+      
+      // Rediriger vers la liste des tickets après un court délai
+      setTimeout(() => {
+        router.push('/dashboard/tickets');
+      }, 500);
     } catch (error) {
       console.error('Erreur lors de la mise à jour du ticket:', error);
       alert(error.message);
@@ -114,7 +122,6 @@ export default function TicketDetails({ ticket }) {
               {isEditing ? 'Annuler' : 'Modifier'}
             </button>
           </div>
-
           <form onSubmit={handleSubmit} className="space-y-6 text-black">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -219,32 +226,49 @@ export default function TicketDetails({ ticket }) {
               <h2 className="text-xl font-semibold mb-4 text-gray-800">Informations Client</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Client</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="clientFirstName"
-                      value={formData.clientFirstName}
+                    <select
+                      name="client"
+                      value={formData.client}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      <option value="">Sélectionner un client</option>
+                      {[
+                        "TDA Algerian VN", "AbuDhabi", "Sharjah", "NOC", "KSA", "Palastine", 
+                        "Egypt", "Dubai", "Oman", "Moroco", "Algeria", "Qatar", "Kuwait", 
+                        "Libya", "Mauritania", "HQ ASBU", "HUB", "Tunisia", "Iraq", 
+                        "Bahrain", "Sudan", "Jordan", "Teleliban"
+                      ].map((client) => (
+                        <option key={client} value={client}>
+                          {client}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
-                    <p className="text-gray-900">{ticket.client_first_name}</p>
+                    <p className="text-gray-900">{ticket.client}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Station</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="clientLastName"
-                      value={formData.clientLastName}
+                    <select
+                      name="station"
+                      value={formData.station}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      <option value="">Sélectionner une station</option>
+                      {["Radio", "TV", "HUB"].map((station) => (
+                        <option key={station} value={station}>
+                          {station}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
-                    <p className="text-gray-900">{ticket.client_last_name}</p>
+                    <p className="text-gray-900">{ticket.station}</p>
                   )}
                 </div>
 
@@ -284,7 +308,7 @@ export default function TicketDetails({ ticket }) {
                     <input
                       type="checkbox"
                       name="waitingClient"
-                      checked={formData.waitingClient || false}
+                      checked={formData.waitingClient}
                       onChange={handleChange}
                       className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
@@ -302,7 +326,7 @@ export default function TicketDetails({ ticket }) {
                 {isEditing ? (
                   <div className="w-full max-w-md">
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors"
-                         onClick={() => fileInputRef.current.click()}>
+                        onClick={() => fileInputRef.current.click()}>
                       {formData.image ? (
                         <img 
                           src={formData.image} 

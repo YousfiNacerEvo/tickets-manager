@@ -1,12 +1,15 @@
 const API_URL = "https://gestion-ticket-back-78nj.onrender.com";
+const API_URL_LOCAL = "http://localhost:10000";
 
 export async function Login(email, password) {
+  console.log(localStorage.getItem("token"))
   try {
     console.log("api url", API_URL);
-    const response = await fetch(`${API_URL}/login`, {
+    const response = await fetch(`${API_URL_LOCAL}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify({ email, password }),
     });

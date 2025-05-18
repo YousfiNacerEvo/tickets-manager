@@ -1,71 +1,94 @@
 import React from 'react';
 
 export default function StepClientInfo({ ticket, handleChange, handleNext, handlePrev }) {
+  const clients = [
+    "TDA Algerian VN", "AbuDhabi", "Sharjah", "NOC", "KSA", "Palastine", 
+    "Egypt", "Dubai", "Oman", "Moroco", "Algeria", "Qatar", "Kuwait", 
+    "Libya", "Mauritania", "HQ ASBU", "HUB", "Tunisia", "Iraq", 
+    "Bahrain", "Sudan", "Jordan", "Teleliban"
+  ];
+
+  const stations = ["Radio", "TV", "HUB"];
+
   return (
-    <div className="space-y-6 text-black">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            Nom
-          </label>
-          <input
-            type="text"
-            name="clientLastName"
-            value={ticket.clientLastName}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Client</label>
+          <select
+            name="client"
+            value={ticket.client || ''}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition shadow-sm"
+            className="w-full text-black px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
             required
-          />
+          >
+            <option value="">Sélectionner un client</option>
+            {clients.map((client) => (
+              <option key={client} value={client}>
+                {client}
+              </option>
+            ))}
+          </select>
         </div>
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            Prénom
-          </label>
-          <input
-            type="text"
-            name="clientFirstName"
-            value={ticket.clientFirstName}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Station</label>
+          <select
+            name="station"
+            value={ticket.station || ''}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition shadow-sm"
+            className="w-full text-black placeholder:text-gray[300] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
             required
-          />
+          >
+            <option value="">Sélectionner une station</option>
+            {stations.map((station) => (
+              <option key={station} value={station}>
+                {station}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10a9 9 0 0118 0c0 7-9 13-9 13S3 17 3 10z" /></svg>
-            Téléphone
-          </label>
-          <input
-            type="tel"
-            name="clientPhone"
-            value={ticket.clientPhone}
-            onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition shadow-sm"
-            required
-          />
-        </div>
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 12a4 4 0 01-8 0 4 4 0 018 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 16v2m0 4h.01" /></svg>
-            Email
-          </label>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
           <input
             type="email"
             name="clientEmail"
-            value={ticket.clientEmail}
+            value={ticket.clientEmail || ''}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition shadow-sm"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+          <input
+            type="tel"
+            name="clientPhone"
+            value={ticket.clientPhone || ''}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
             required
           />
         </div>
       </div>
-      <div className="flex justify-between">
-        <button type="button" onClick={handlePrev} className="bg-gray-200 text-gray-800 px-8 py-2 rounded-lg hover:bg-gray-300 transition cursor-pointer font-semibold shadow">Previous</button>
-        <button type="button" onClick={handleNext} className="bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer font-semibold shadow">Next</button>
+
+      <div className="flex justify-between pt-6">
+        <button
+          type="button"
+          onClick={handlePrev}
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+        >
+          Précédent
+        </button>
+        <button
+          type="button"
+          onClick={handleNext}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+        >
+          Suivant
+        </button>
       </div>
     </div>
   );

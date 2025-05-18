@@ -10,7 +10,7 @@ export async function getTicketById(ticketId, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets/${ticketId}`, {
+    const response = await fetch(`http://localhost:10000/tickets/${ticketId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -49,8 +49,8 @@ export async function getAllTickets() {
   const token = getToken();
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
-  try {
-    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets`, {
+  try {//https://gestion-ticket-back-3.onrender.com/tickets
+    const response = await fetch(`http://localhost:10000/tickets`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -76,7 +76,7 @@ export async function updateTicket(ticketId, ticketData) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets/${ticketId}`, {
+    const response = await fetch(`http://localhost:10000/tickets/${ticketId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -86,9 +86,17 @@ export async function updateTicket(ticketId, ticketData) {
       cache: 'no-store',
     });
 
-    if (!response.ok) throw new Error('Erreur lors de la mise à jour du ticket.');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erreur lors de la mise à jour du ticket.');
+    }
 
-    return await response.json();
+    const data = await response.json();
+    if (!data || data.length === 0) {
+      throw new Error('Aucune donnée reçue après la mise à jour.');
+    }
+
+    return data;
   } catch (error) {
     console.error('Erreur backend:', error);
     throw error;
@@ -145,9 +153,15 @@ export async function sendTicketToBackend(ticketData) {
     const finalTicketData = {
       ...ticketDataWithoutImage,
       ...(imageUrl && { image: imageUrl }),
+      client: ticketData.client || '',
+      station: ticketData.station || '',
+      client_phone: ticketData.clientPhone || '',
+      client_email: ticketData.clientEmail || '',
     };
 
-    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets`, {
+    console.log('Données envoyées au backend:', finalTicketData);
+
+    const response = await fetch(`http://localhost:10000/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -158,7 +172,8 @@ export async function sendTicketToBackend(ticketData) {
     });
 
     if (!response.ok) {
-      throw new Error("Erreur lors de l'envoi du ticket.");
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Erreur lors de l'envoi du ticket.");
     }
     return await response.json();
   } catch (error) {
@@ -281,5 +296,85 @@ export async function getDashboardState() {
       pending: 0,
       open: 0
     };
+  }
+}
+
+export async function getTicketsByStation() {
+  const token = getToken();
+  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+
+  try {
+    const response = await fetch(`http://localhost:10000/stats/tickets-by-station`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    });
+    
+    if (!response.ok) throw new Error('Erreur lors de la récupération des statistiques par station.');
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur:', error);
+    throw error;
+  }
+}
+
+export async function getIncidentsByPriority() {
+  const token = getToken();
+  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+
+  try {
+    const response = await fetch(`http://localhost:10000/stats/incidents-by-priority`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    });
+    
+    if (!response.ok) throw new Error('Erreur lors de la récupération des incidents par priorité.');
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur:', error);
+    throw error;
+  }
+}
+
+export async function getNocOsticketCategories() {
+  const token = getToken();
+  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+
+  try {
+    const response = await fetch(`http://localhost:10000/stats/noc-osticket-categories`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    });
+    
+    if (!response.ok) throw new Error('Erreur lors de la récupération des catégories NOC Osticket.');
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur:', error);
+    throw error;
+  }
+}
+
+export async function getIncidentsByStatus() {
+  const token = getToken();
+  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+
+  try {
+    const response = await fetch(`http://localhost:10000/stats/incidents-by-status`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    });
+    
+    if (!response.ok) throw new Error('Erreur lors de la récupération des incidents par statut.');
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur:', error);
+    throw error;
   }
 }

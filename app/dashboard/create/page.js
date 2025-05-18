@@ -47,8 +47,8 @@ export default function CreateTicket() {
     priority: 'medium',
     type: 'request',
     status: 'open',
-    clientFirstName: '',
-    clientLastName: '',
+    client: '',
+    station: '',
     clientPhone: '',
     clientEmail: '',
     image: null,
@@ -93,18 +93,23 @@ export default function CreateTicket() {
     setIsLoading(true);
     setMessage({ type: '', text: '' });
     
-    // Générer un id unique pour le ticket
-    const ticketWithId = { ...ticket };
-    // Envoyer au backend
     try {
-      const backendResponse = await sendTicketToBackend(ticketWithId);
+      // Vérification des champs requis
+      if (!ticket.client || !ticket.station) {
+        setMessage({ type: 'error', text: 'Veuillez sélectionner un client et une station.' });
+        setIsLoading(false);
+        return;
+      }
+
+      const backendResponse = await sendTicketToBackend(ticket);
       console.log('Réponse backend:', backendResponse);
       setMessage({ type: 'success', text: 'Ticket créé avec succès !' });
       setTimeout(() => {
         router.push('/dashboard');
       }, 2000);
     } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur lors de l\'envoi du ticket au backend' });
+      console.error('Erreur lors de la création du ticket:', err);
+      setMessage({ type: 'error', text: err.message || 'Erreur lors de l\'envoi du ticket au backend' });
     } finally {
       setIsLoading(false);
     }

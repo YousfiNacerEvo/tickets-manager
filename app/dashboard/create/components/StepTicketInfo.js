@@ -71,25 +71,7 @@ export default function StepTicketInfo({ ticket, handleChange, handleNext }) {
           </select>
         </div>
       </div>
-      <div className="flex items-center mt-2">
-        <button
-          type="button"
-          onClick={() => handleChange({ target: { name: 'waitingClient', checked: !ticket.waitingClient, type: 'checkbox' } })}
-          className={`h-6 w-6 flex items-center justify-center rounded border-2 mr-2 transition-colors duration-150 cursor-pointer ${ticket.waitingClient ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}`}
-          aria-pressed={ticket.waitingClient}
-        >
-          {ticket.waitingClient && (
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-          )}
-        </button>
-        <label
-          htmlFor="waitingClient"
-          className="text-sm text-gray-700 select-none cursor-pointer"
-          onClick={() => handleChange({ target: { name: 'waitingClient', checked: !ticket.waitingClient, type: 'checkbox' } })}
-        >
-          Waiting client
-        </label>
-      </div>
+      
       <div className="flex justify-end">
         <button type="button" onClick={handleNext} className="bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer font-semibold shadow">Next</button>
       </div>

@@ -1,57 +1,75 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+import {
+  getTicketsByStation,
+  getIncidentsByPriority,
+  getNocOsticketCategories,
+  getIncidentsByStatus
+} from '@/services/ticketservice';
 
-// Register required chart components
+// Enregistrer les composants Chart.js nécessaires
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
 );
 
-export default function StatisticsPage() {
-  const [createdTickets, setCreatedTickets] = useState([]);
-  const [closedTickets, setClosedTickets] = useState([]);
-  const [interval, setInterval] = useState('day'); // 'day' | 'month' | 'year'
+export default function Dashboard() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    ticketsByStation: [],
+    incidentsByPriority: [],
+    nocOsticketCategories: [],
+    incidentsByStatus: []
+  });
 
-  const API_URL = "https://gestion-ticket-back-3.onrender.com";
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [
+          ticketsByStation,
+          incidentsByPriority,
+          nocOsticketCategories,
+          incidentsByStatus
+        ] = await Promise.all([
+          getTicketsByStation(),
+          getIncidentsByPriority(),
+          getNocOsticketCategories(),
+          getIncidentsByStatus()
+        ]);
 
-useEffect(() => {
-  async function fetchData() {
-    try {
-      // Ajoute le token si besoin (ex: depuis localStorage)
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        setStats({
+          ticketsByStation,
+          incidentsByPriority,
+          nocOsticketCategories,
+          incidentsByStatus
+        });
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const [createdRes, closedRes] = await Promise.all([
-        fetch(`${API_URL}/tickets-stats?status=open&groupBy=${interval}`, { headers }),
-        fetch(`${API_URL}/tickets-stats?status=closed&groupBy=${interval}`, { headers }),
-      ]);
-      setCreatedTickets(await createdRes.json());
-      setClosedTickets(await closedRes.json());
-    } catch (error) {
-      console.error('Error fetching ticket data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-  fetchData();
-}, [interval]);
+    fetchData();
+    // Rafraîchir les données toutes les 5 minutes
+    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -61,94 +79,128 @@ useEffect(() => {
     );
   }
 
-  console.log('Created Tickets:', createdTickets);
-  console.log('Closed Tickets:', closedTickets);
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-red-500">
+        Erreur: {error}
+      </div>
+    );
+  }
 
   const chartOptions = {
     responsive: true,
-    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Évolution des tickets',
       },
     },
     scales: {
       y: {
         beginAtZero: true,
         ticks: {
-          stepSize: 1,
-        },
-      },
-    },
+          stepSize: 1
+        }
+      }
+    }
   };
 
-  const createdChartData = {
-    labels: createdTickets.map(item => item.label),
+  const ticketsByStationData = {
+    labels: stats.ticketsByStation.map(item => item.station),
     datasets: [
       {
-        label: 'Tickets Créés',
-        data: createdTickets.map(item => item.count),
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-        tension: 0.4,
-        fill: false,
+        label: 'Nombre de tickets',
+        data: stats.ticketsByStation.map(item => item.count),
+        backgroundColor: 'rgba(53, 162, 235, 0.5)',
       },
     ],
   };
 
-  const closedChartData = {
-    labels: closedTickets.map(item => item.label),
+  // Mapping des priorités pour l'affichage
+  const priorityMap = {
+    low: "low",
+    medium: "medium",
+    high: "high"
+  };
+  const priorityOrder = ["low", "medium", "high"];
+  const priorityLabels = priorityOrder;
+  const priorityCounts = priorityOrder.map(
+    priority => (stats.incidentsByPriority.find(item => item.priority === priority) || { count: 0 }).count
+  );
+
+  const incidentsByPriorityData = {
+    labels: priorityLabels,
     datasets: [
       {
-        label: 'Tickets Fermés',
-        data: closedTickets.map(item => item.count),
-        borderColor: 'rgb(16, 185, 129)',
-        backgroundColor: 'rgba(16, 185, 129, 0.5)',
-        tension: 0.4,
-        fill: false,
+        label: "Nombre d'incidents",
+        data: priorityCounts,
+        backgroundColor: 'rgba(255, 99, 132, 0.5)',
       },
     ],
   };
 
-  console.log('Created Chart Data:', createdChartData);
-  console.log('Closed Chart Data:', closedChartData);
+  const nocOsticketCategoriesData = {
+    labels: stats.nocOsticketCategories.map(item => item.category),
+    datasets: [
+      {
+        label: 'Nombre de tickets',
+        data: stats.nocOsticketCategories.map(item => item.count),
+        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+      },
+    ],
+  };
+
+  // Ordre et exhaustivité pour les statuts
+  const statusOrder = ["open", "closed", "in_progress"];
+  const statusLabels = statusOrder;
+  const statusCounts = statusOrder.map(
+    status => (stats.incidentsByStatus.find(item => item.status === status) || { count: 0 }).count
+  );
+
+  const incidentsByStatusData = {
+    labels: statusLabels,
+    datasets: [
+      {
+        label: "Nombre d'incidents",
+        data: statusCounts,
+        backgroundColor: 'rgba(153, 102, 255, 0.5)',
+      },
+    ],
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Statistiques des Tickets</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Dashboard Technique</h1>
       
-      <div className="flex justify-center gap-4 mb-8">
-        {['day', 'month', 'year'].map((int) => (
-          <button
-            key={int}
-            onClick={() => setInterval(int)}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              interval === int
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 hover:bg-gray-300'
-            }`}
-          >
-            {int === 'day' ? 'Jour' : int === 'month' ? 'Mois' : 'Année'}
-          </button>
-        ))}
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* NOC Ticket By Station */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl font-semibold mb-4">Tickets Créés</h2>
-          <div style={{ height: '400px', position: 'relative' }}>
-            <Line data={createdChartData} options={chartOptions} />
+          <h2 className="text-xl font-semibold mb-4 text-black">NOC Ticket By Client</h2>
+          <div style={{ height: '400px' }}>
+            <Bar options={chartOptions} data={ticketsByStationData} />
           </div>
         </div>
 
+        {/* STE iDirect Incidents By Priority */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl font-semibold mb-4">Tickets Fermés</h2>
-          <div style={{ height: '400px', position: 'relative' }}>
-            <Line data={closedChartData} options={chartOptions} />
+          <h2 className="text-xl font-semibold mb-4 text-black">STE iDirect Incidents By Priority</h2>
+          <div style={{ height: '400px' }}>
+            <Bar options={chartOptions} data={incidentsByPriorityData} />
+          </div>
+        </div>
+
+        {/* NOC Osticket Categories */}
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 text-black">NOC Osticket Sation</h2>
+          <div style={{ height: '400px' }}>
+            <Bar options={chartOptions} data={nocOsticketCategoriesData} />
+          </div>
+        </div>
+
+        {/* STE iDirect Incidents By Status */}
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 text-black">STE iDirect Incidents By Status</h2>
+          <div style={{ height: '400px' }}>
+            <Bar options={chartOptions} data={incidentsByStatusData} />
           </div>
         </div>
       </div>
