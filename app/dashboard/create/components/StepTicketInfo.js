@@ -59,19 +59,14 @@ export default function StepTicketInfo({ ticket, handleChange, handleNext }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-          <select
-            name="status"
-            value={ticket.status}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
-          >
-            <option value="open">Open</option>
-            <option value="pending">Pending</option>
-            <option value="close">Close</option>
-          </select>
+          <input
+            type="text"
+            value="open"
+            disabled
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
         </div>
       </div>
-      
       <div className="flex justify-end">
         <button type="button" onClick={handleNext} className="bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer font-semibold shadow">Next</button>
       </div>

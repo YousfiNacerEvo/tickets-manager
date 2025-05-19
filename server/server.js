@@ -5,6 +5,7 @@ const app = express();
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -94,7 +95,7 @@ app.post('/tickets', authenticateToken, async (req, res) => {
   console.log("Données du ticket à créer:", req.body);
   console.log("Utilisateur connecté:", req.user);
   console.log("Donnée IDDD:", req.user.id);
-  const { title, description, priority, type, status, client, station, clientPhone, clientEmail, image, waitingClient } = req.body;
+  const { title, description, priority, type, status, client, station, clientPhone, clientEmail, image, waitingClient, resolutionComment } = req.body;
   try {
     const { data, error } = await supabase
       .from('tickets')
@@ -111,7 +112,8 @@ app.post('/tickets', authenticateToken, async (req, res) => {
         image,
         waiting_client: waitingClient,
         user_id: req.user.id,
-        user_email: req.user.email
+        user_email: req.user.email,
+        resolution_comment: resolutionComment
       })
       .select();
 
@@ -145,7 +147,7 @@ app.get('/tickets/:id', async (req, res) => {
 app.put('/tickets/:id', async (req, res) => {
   const { id } = req.params;
   console.log("Données du ticket à mettre à jour:", req.body);
-  const { title, description, priority, type, status, client, station, clientPhone, clientEmail, image, waitingClient } = req.body;
+  const { title, description, priority, type, status, client, station, clientPhone, clientEmail, image, waitingClient, resolutionComment } = req.body;
   const { data, error } = await supabase
     .from('tickets')
     .update({
@@ -159,7 +161,8 @@ app.put('/tickets/:id', async (req, res) => {
       client_phone: clientPhone,
       client_email: clientEmail,
       image,
-      waiting_client: waitingClient
+      waiting_client: waitingClient,
+      resolution_comment: resolutionComment
     })
     .eq('id', id)
     .select();
@@ -208,8 +211,7 @@ app.get('/states', async (req, res) => {
       .from('tickets')
       .select('*');
     
-    console.log("Données brutes de Supabase:", data);
-    console.log("Erreur Supabase:", error);
+    
 
     if (error) {
       console.error('Erreur Supabase:', error);
@@ -233,7 +235,6 @@ app.get('/states', async (req, res) => {
       open: data.filter(ticket => ticket.status === 'open').length
     };
 
-    console.log("Statistiques calculées:", stats);
     res.json(stats);
   } catch (error) {
     console.error('Erreur lors de la récupération des statistiques:', error);
@@ -271,7 +272,7 @@ app.get('/ticketsStats', async (req, res) => {
 });
 
 // Endpoint pour les tickets par station
-app.get('/stats/tickets-by-station', authenticateToken, async (req, res) => {
+app.get('/stats/tickets-by-station', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('tickets')
@@ -284,7 +285,7 @@ app.get('/stats/tickets-by-station', authenticateToken, async (req, res) => {
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
-    console.log("Statistiques par station:", stats);
+    
 
     const result = Object.entries(stats).map(([station, count]) => ({
       station,
@@ -299,7 +300,7 @@ app.get('/stats/tickets-by-station', authenticateToken, async (req, res) => {
 });
 
 // Endpoint pour les incidents par priorité
-app.get('/stats/incidents-by-priority', authenticateToken, async (req, res) => {
+app.get('/stats/incidents-by-priority',  async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('tickets')
@@ -317,7 +318,7 @@ app.get('/stats/incidents-by-priority', authenticateToken, async (req, res) => {
       priority,
       count
     }));
-    console.log("Statistiques par priorité:", result);
+    
     res.json(result);
   } catch (error) {
     console.error('Erreur:', error);
@@ -326,7 +327,7 @@ app.get('/stats/incidents-by-priority', authenticateToken, async (req, res) => {
 });
 
 // Endpoint pour les catégories NOC Osticket
-app.get('/stats/noc-osticket-categories', authenticateToken, async (req, res) => {
+app.get('/stats/noc-osticket-categories', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('tickets')
@@ -354,7 +355,7 @@ app.get('/stats/noc-osticket-categories', authenticateToken, async (req, res) =>
 });
 
 // Endpoint pour les incidents par statut
-app.get('/stats/incidents-by-status', authenticateToken, async (req, res) => {
+app.get('/stats/incidents-by-status', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('tickets')
@@ -380,8 +381,62 @@ app.get('/stats/incidents-by-status', authenticateToken, async (req, res) => {
   }
 });
 
-app.listen(10000, () => {
-  console.log('Server is running on http://localhost:10000');
-})
+// Configuration du transporteur email
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  }
+});
+
+// Endpoint pour l'envoi d'email de notification de ticket
+app.post('/api/send-ticket',authenticateToken, async (req, res) => {
+  console.log("Données de User maiou:", req.user.email);
+  try {
+    const { ticketId, userEmail } = req.body;
+
+    if (!ticketId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'ticketId est requis' 
+      });
+    }
+
+    const ticketUrl = `https://monapp.com/tickets/${ticketId}`;
+    
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: 'naceryousfi007@gmail.com',
+      subject: 'Nouveau ticket créé',
+      html: `
+        <h2>Un nouveau ticket a été créé</h2>
+        <p>Un nouveau ticket a été créé dans le système.</p>
+        <p><strong>Email de l'utilisateur :</strong> ${req.user.email || 'Non renseigné'}</p>
+        <p>Vous pouvez accéder au ticket en cliquant sur le lien suivant :</p>
+        <a href="${ticketUrl}">Voir le ticket</a>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    
+    res.json({ 
+      success: true, 
+      message: 'Email envoyé avec succès' 
+    });
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi de l\'email:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de l\'envoi de l\'email',
+      error: error.message 
+    });
+  }
+});
+
+const PORT = 10000;
+app.listen(PORT, () => {
+  console.log(`Serveur démarré sur le port ${PORT}`);
+});
 
 

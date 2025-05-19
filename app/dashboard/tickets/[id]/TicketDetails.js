@@ -25,6 +25,7 @@ export default function TicketDetails({ ticket }) {
     clientPhone: ticket.client_phone,
     clientEmail: ticket.client_email,
     image: ticket.image,
+    resolutionComment: ticket.resolution_comment || '',
   });
 
   const handleImageChange = async (e) => {
@@ -57,7 +58,7 @@ export default function TicketDetails({ ticket }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { title, description, priority, status, type, client, station, clientPhone, clientEmail, image, waitingClient } = formData;
+      const { title, description, priority, status, type, client, station, clientPhone, clientEmail, image, waitingClient, resolutionComment } = formData;
       const updatedTicket = {
         title,
         description,
@@ -69,7 +70,8 @@ export default function TicketDetails({ ticket }) {
         clientPhone,
         clientEmail,
         image,
-        waitingClient: waitingClient || false
+        waitingClient: waitingClient || false,
+        resolutionComment,
       };
       
       const response = await updateTicket(ticket.id, updatedTicket);
@@ -317,6 +319,22 @@ export default function TicketDetails({ ticket }) {
                   )}
                 </div>
               </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Commentaire de résolution</h2>
+              {isEditing ? (
+                <textarea
+                  name="resolutionComment"
+                  value={formData.resolutionComment}
+                  onChange={handleChange}
+                  rows="3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Ajouter un commentaire de résolution..."
+                />
+              ) : (
+                <p className="text-gray-900 whitespace-pre-wrap">{ticket.resolution_comment || <span className='text-gray-400'>Aucun commentaire</span>}</p>
+              )}
             </div>
 
             {/* Image Section */}

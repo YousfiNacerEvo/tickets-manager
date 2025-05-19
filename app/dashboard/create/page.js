@@ -8,6 +8,7 @@ import StepClientInfo from './components/StepClientInfo';
 import StepAttachment from './components/StepAttachment';
 import { getTicketById } from '@/services/ticketservice';
 import { sendTicketToBackend } from '@/services/ticketservice';
+import { sendTicketNotificationEmail } from '@/services/emailService';
 
 const steps = [
   { label: "Informations du ticket", icon: (
@@ -53,6 +54,7 @@ export default function CreateTicket() {
     clientEmail: '',
     image: null,
     waitingClient: false,
+    resolutionComment: '',
   });
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef();
@@ -102,7 +104,13 @@ export default function CreateTicket() {
       }
 
       const backendResponse = await sendTicketToBackend(ticket);
-      console.log('Réponse backend:', backendResponse);
+      const ticketId = Array.isArray(backendResponse) ? backendResponse[0]?.id : backendResponse?.id;
+      if (!ticketId) throw new Error("Impossible de récupérer l'identifiant du ticket créé");
+      
+      // Envoyer l'email de notification
+      console.log("cikte",ticket)
+      await sendTicketNotificationEmail(ticketId, ticket.userEmail);
+      
       setMessage({ type: 'success', text: 'Ticket créé avec succès !' });
       setTimeout(() => {
         router.push('/dashboard');

@@ -5,7 +5,7 @@ export async function Login(email, password) {
   console.log(localStorage.getItem("token"))
   try {
     console.log("api url", API_URL);
-    const response = await fetch(`${API_URL_LOCAL}/login`, {
+    const response = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

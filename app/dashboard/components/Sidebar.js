@@ -1,8 +1,8 @@
 "use client";
-import { FaPlus, FaList, FaUserPlus, FaChartBar, FaHome } from "react-icons/fa";
+import { FaPlus, FaList, FaUserPlus, FaChartBar, FaHome, FaSignOutAlt } from "react-icons/fa";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-
+import { usePathname, useRouter } from "next/navigation";
+import { Logout } from "@/services/auth";
 
 const menu = [
   { label: "Dashboard", icon: <FaChartBar />, href: "/dashboard" },
@@ -13,6 +13,13 @@ const menu = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    Logout();
+    router.push('/Login');
+  };
+
   return (
     <aside className="w-64 min-h-screen bg-white border-r border-gray-200 flex flex-col py-8 px-4 shadow-lg">
       <div className="mb-10 text-2xl font-bold text-blue-600 tracking-tight">TicketApp</div>
@@ -32,6 +39,13 @@ export default function Sidebar() {
           </Link>
         ))}
       </nav>
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 transition mt-4"
+      >
+        <span className="text-lg"><FaSignOutAlt /></span>
+        <span>Déconnexion</span>
+      </button>
       <div className="mt-auto text-xs text-gray-400 text-center pt-8">
         &copy; {new Date().getFullYear()} TicketApp
       </div>

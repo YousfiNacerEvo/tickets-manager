@@ -10,7 +10,7 @@ export async function getTicketById(ticketId, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`http://localhost:10000/tickets/${ticketId}`, {
+    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/tickets/${ticketId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -50,7 +50,7 @@ export async function getAllTickets() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {//https://gestion-ticket-back-3.onrender.com/tickets
-    const response = await fetch(`http://localhost:10000/tickets`, {
+    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/tickets`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -76,7 +76,7 @@ export async function updateTicket(ticketId, ticketData) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`http://localhost:10000/tickets/${ticketId}`, {
+    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/tickets/${ticketId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -161,7 +161,7 @@ export async function sendTicketToBackend(ticketData) {
 
     console.log('Données envoyées au backend:', finalTicketData);
 
-    const response = await fetch(`http://localhost:10000/tickets`, {
+    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -182,129 +182,14 @@ export async function sendTicketToBackend(ticketData) {
   }
 }
 
-export async function getTicketStats() {
-  const token = getToken();
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
-  try {
-    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    });
-    
-    if (!response.ok) throw new Error('Erreur lors de la récupération des statistiques.');
-    
-    const tickets = await response.json();
-    
-    // Calculer les statistiques quotidiennes (tickets résolus)
-    const dailyStats = tickets
-      .filter(ticket => ticket.status === 'closed')
-      .reduce((acc, ticket) => {
-        const date = new Date(ticket.updated_at).toISOString().split('T')[0];
-        acc[date] = (acc[date] || 0) + 1;
-        return acc;
-      }, {});
-
-    const daily = Object.entries(dailyStats)
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // Calculer les statistiques mensuelles
-    const monthlyStats = tickets.reduce((acc, ticket) => {
-      const month = new Date(ticket.created_at).toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
-      acc[month] = (acc[month] || 0) + 1;
-      return acc;
-    }, {});
-
-    const monthly = Object.entries(monthlyStats)
-      .map(([month, count]) => ({ month, count }))
-      .sort((a, b) => {
-        const [monthA, yearA] = a.month.split(' ');
-        const [monthB, yearB] = b.month.split(' ');
-        return new Date(`${yearA}-${monthA}`) - new Date(`${yearB}-${monthB}`);
-      });
-
-    // Calculer les statistiques par type
-    const byType = tickets.reduce((acc, ticket) => {
-      acc[ticket.type] = (acc[ticket.type] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Calculer les statistiques par priorité
-    const byPriority = tickets.reduce((acc, ticket) => {
-      acc[ticket.priority] = (acc[ticket.priority] || 0) + 1;
-      return acc;
-    }, {});
-
-    return {
-      daily,
-      monthly,
-      byType,
-      byPriority,
-    };
-  } catch (error) {
-    console.error('Erreur backend:', error);
-    throw error;
-  }
-} 
-
-export async function getDashboardState() {
-  const token = getToken();
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-  console.log("request envoyeeeeeeeeeeee")
-  try {
-    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/states`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    });
-    
-    if (!response.ok) {
-      console.error('Erreur de réponse:', response.status, response.statusText);
-      throw new Error('Erreur lors de la récupération des états des tickets.');
-    }
-    
-    const states = await response.json();
-    console.log('Réponse de l\'API:', states);
-
-    // Si la réponse est null ou undefined, retourner des valeurs par défaut
-    if (!states) {
-      console.warn('La réponse de l\'API est null ou undefined');
-      return {
-        total: 0,
-        resolved: 0,
-        pending: 0,
-        open: 0
-      };
-    }
-
-    // Formatage des statistiques pour le dashboard
-    return states
-
-  } catch (error) {
-    console.error('Erreur détaillée:', error);
-    // En cas d'erreur, retourner des valeurs par défaut
-    return {
-      total: 0,
-      resolved: 0,
-      pending: 0,
-      open: 0
-    };
-  }
-}
 
 export async function getTicketsByStation() {
   const token = getToken();
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`http://localhost:10000/stats/tickets-by-station`, {
+    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/stats/tickets-by-station`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -324,7 +209,7 @@ export async function getIncidentsByPriority() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`http://localhost:10000/stats/incidents-by-priority`, {
+    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/stats/incidents-by-priority`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -344,7 +229,7 @@ export async function getNocOsticketCategories() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`http://localhost:10000/stats/noc-osticket-categories`, {
+    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/stats/noc-osticket-categories`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -364,7 +249,7 @@ export async function getIncidentsByStatus() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`http://localhost:10000/stats/incidents-by-status`, {
+    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/stats/incidents-by-status`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
