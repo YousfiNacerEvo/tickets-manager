@@ -56,7 +56,7 @@ export default function StepClientInfo({ ticket, handleChange, handleNext, handl
             name="clientEmail"
             value={ticket.clientEmail || ''}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
+            className="w-full px-4 text-black py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
             required
           />
         </div>
@@ -68,7 +68,7 @@ export default function StepClientInfo({ ticket, handleChange, handleNext, handl
             name="clientPhone"
             value={ticket.clientPhone || ''}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
+            className="w-full px-4 py-2 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
             required
           />
         </div>
