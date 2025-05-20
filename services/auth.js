@@ -80,3 +80,25 @@ export const forgetPassword = async (email) => {
     throw new Error(error.message || "Une erreur est survenue lors de la réinitialisation du mot de passe");
   }
 };
+
+export const updatePassword = async (password) => {
+  try {
+    const response = await fetch("https://gestion-ticket-back-78nj.onrender.com/api/update-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ password }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Une erreur est survenue");
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw new Error(error.message || "Une erreur est survenue lors de la mise à jour du mot de passe");
+  }
+};

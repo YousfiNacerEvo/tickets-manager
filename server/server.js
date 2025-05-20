@@ -459,6 +459,43 @@ app.post("/api/forget-password",async (req, res) => {
   }
 });
 
+app.post("/api/update-password", async (req, res) => {
+  try {
+    const { password } = req.body;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "Token manquant" });
+    }
+
+    if (!password) {
+      return res.status(400).json({ message: "Le mot de passe est requis" });
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      return res.status(401).json({ message: "Token invalide" });
+    }
+
+    const { error } = await supabase.auth.updateUser({
+      password: password
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ message: "Mot de passe mis à jour avec succès" });
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour du mot de passe:", error);
+    res.status(500).json({
+      message: error.message || "Une erreur est survenue lors de la mise à jour du mot de passe",
+    });
+  }
+});
+
 const PORT = 10000;
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
