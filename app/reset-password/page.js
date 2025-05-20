@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { updatePassword } from "@/services/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -10,6 +10,20 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Vérifier si nous avons un token de réinitialisation
+    const token = searchParams.get('token');
+    if (!token) {
+      setMessage({
+        type: "error",
+        text: "Lien de réinitialisation invalide ou expiré",
+      });
+      setTimeout(() => {
+        router.push("/Login");
+      }, 3000);
+    }
+  }, [searchParams, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +43,12 @@ export default function ResetPasswordPage() {
         throw new Error("Le mot de passe doit contenir au moins 6 caractères");
       }
 
-      await updatePassword(password);
+      const token = searchParams.get('token');
+      if (!token) {
+        throw new Error("Lien de réinitialisation invalide ou expiré");
+      }
+
+      await updatePassword(password, token);
       setMessage({
         type: "success",
         text: "Mot de passe mis à jour avec succès",

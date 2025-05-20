@@ -62,7 +62,7 @@ export async function addAccount(email, password) {
 
 export const forgetPassword = async (email) => {
   try {
-    const response = await fetch("https://gestion-ticket-back-78nj.onrender.com/api/forget-password", {
+    const response = await fetch("http://localhost:10000/api/forget-password", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -81,15 +81,14 @@ export const forgetPassword = async (email) => {
   }
 };
 
-export const updatePassword = async (password) => {
+export const updatePassword = async (password, token) => {
   try {
-    const response = await fetch("https://gestion-ticket-back-78nj.onrender.com/api/update-password", {
+    const response = await fetch("http://localhost:10000/api/update-password", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`,
       },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password, token }),
     });
 
     if (!response.ok) {

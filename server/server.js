@@ -42,11 +42,10 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 console.log("Supabase URL:", process.env.SUPABASE_URL);
 console.log("Supabase Key:", supabaseKey);
 const supabase = createClient(supabaseUrl, supabaseKey)
+ //"https://tickets-manager-kappa.vercel.app"
+    //"http://192.168.137.1:3000",
 const corsOptions = {
-  origin: [
-    "https://tickets-manager-kappa.vercel.app", // Retirer le / final
-    "http://localhost:3001",
-  ],
+  origin:"*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
@@ -461,25 +460,19 @@ app.post("/api/forget-password",async (req, res) => {
 
 app.post("/api/update-password", async (req, res) => {
   try {
-    const { password } = req.body;
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const { password, token } = req.body;
 
     if (!token) {
-      return res.status(401).json({ message: "Token manquant" });
+      return res.status(400).json({ message: "Token de réinitialisation manquant" });
     }
 
     if (!password) {
       return res.status(400).json({ message: "Le mot de passe est requis" });
     }
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      return res.status(401).json({ message: "Token invalide" });
-    }
-
-    const { error } = await supabase.auth.updateUser({
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: token,
+      type: 'recovery',
       password: password
     });
 
