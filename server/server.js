@@ -45,7 +45,7 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 const corsOptions = {
   origin: [
     "https://tickets-manager-kappa.vercel.app", // Retirer le / final
-    "http://localhost:3000",
+    "http://localhost:3001",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -430,6 +430,31 @@ app.post('/api/send-ticket',authenticateToken, async (req, res) => {
       success: false, 
       message: 'Erreur lors de l\'envoi de l\'email',
       error: error.message 
+    });
+  }
+});
+
+app.post("/api/forget-password",async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "L'email est requis" });
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ message: "Email de réinitialisation envoyé avec succès" });
+  } catch (error) {
+    console.error("Erreur lors de la réinitialisation du mot de passe:", error);
+    res.status(500).json({
+      message: error.message || "Une erreur est survenue lors de la réinitialisation du mot de passe",
     });
   }
 });

@@ -2,12 +2,14 @@
 import React, { useState } from "react";
 import { Login } from "@/services/auth";
 import { useRouter } from "next/navigation";
+import ResetPassword from "./ResetPassword";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -65,9 +67,13 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <a href="#" className="text-sm text-blue-600 hover:underline">
-              forgot password ?
-            </a>
+            <button
+              type="button"
+              onClick={() => setShowResetPassword(true)}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Mot de passe oublié ?
+            </button>
           </div>
 
           <button
@@ -81,6 +87,9 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
+      {showResetPassword && (
+        <ResetPassword onClose={() => setShowResetPassword(false)} />
+      )}
     </div>
   );
 }

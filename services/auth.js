@@ -59,3 +59,24 @@ export async function addAccount(email, password) {
     throw error;
   }
 }
+
+export const forgetPassword = async (email) => {
+  try {
+    const response = await fetch("https://gestion-ticket-back-78nj.onrender.com/api/forget-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Une erreur est survenue");
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw new Error(error.message || "Une erreur est survenue lors de la réinitialisation du mot de passe");
+  }
+};
