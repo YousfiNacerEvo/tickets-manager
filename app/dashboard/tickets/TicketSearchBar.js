@@ -90,6 +90,16 @@ export default function TicketSearchBar({ filters, setFilters }) {
           <option value="incident">Incident</option>
         </select>
       </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Créé par (email)</label>
+        <input
+          type="text"
+          value={filters.user_email || ''}
+          onChange={e => setFilters(f => ({ ...f, user_email: e.target.value }))}
+          className="px-3 py-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-400"
+          placeholder="Email du créateur"
+        />
+      </div>
     </div>
   );
 } 

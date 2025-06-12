@@ -15,10 +15,12 @@ export default function TicketsListPage() {
     station: '', 
     status: '', 
     priority: '', 
-    type: '' 
+    type: '',
+    user_email: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [loadingTicketId, setLoadingTicketId] = useState(null);
+  const [sortOrder, setSortOrder] = useState('desc');
   const ticketsPerPage = 10;
   const router = useRouter();
 
@@ -29,7 +31,11 @@ export default function TicketsListPage() {
       try {
         const data = await getAllTickets();
         console.log('Tickets data:', data);
-        const sortedTickets = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const sortedTickets = data.sort((a, b) => {
+          const dateA = new Date(a.created_at);
+          const dateB = new Date(b.created_at);
+          return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        });
         setTickets(sortedTickets);
       } catch (err) {
         setError(err.message);
@@ -48,7 +54,7 @@ export default function TicketsListPage() {
     return () => {
       window.removeEventListener('focus', handleFocus);
     };
-  }, []);
+  }, [sortOrder]);
 
   const filteredTickets = tickets.filter(ticket => {
     const matchId = filters.id ? String(ticket.id).includes(filters.id) : true;
@@ -57,7 +63,8 @@ export default function TicketsListPage() {
     const matchStatus = filters.status ? ticket.status === filters.status : true;
     const matchPriority = filters.priority ? ticket.priority === filters.priority : true;
     const matchType = filters.type ? ticket.type === filters.type : true;
-    return matchId && matchClient && matchStation && matchStatus && matchPriority && matchType;
+    const matchUserEmail = filters.user_email ? (ticket.user_email || '').toLowerCase().includes(filters.user_email.toLowerCase()) : true;
+    return matchId && matchClient && matchStation && matchStatus && matchPriority && matchType && matchUserEmail;
   });
 
   const indexOfLastTicket = currentPage * ticketsPerPage;
@@ -78,13 +85,21 @@ export default function TicketsListPage() {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return '--';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '--';
+      return date.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Erreur de formatage de date:', error);
+      return '--';
+    }
   };
 
   const getStatusColor = (status) => {
@@ -135,7 +150,18 @@ export default function TicketsListPage() {
             >
               ← Back to dashboard
             </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Ticket list</h1>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                className="px-4 py-2 bg-white/80 backdrop-blur-sm text-gray-800 rounded-lg hover:bg-white transition-colors duration-200 shadow-sm flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                {sortOrder === 'desc' ? 'Plus récent en premier' : 'Plus ancien en premier'}
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">Ticket list</h1>
+            </div>
           </div>
           <div className="flex flex-wrap gap-4 mb-4">
             <TicketSearchBar filters={filters} setFilters={setFilters} />
@@ -161,6 +187,8 @@ export default function TicketsListPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waiting Client</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de création</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de fermeture</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créé par</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -203,6 +231,10 @@ export default function TicketsListPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(ticket.created_at)}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ticket.status === 'closed' ? formatDate(ticket.closed_at) : '--'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.user_email || '--'}</td>
                       </tr>
                     ))}
                   </tbody>

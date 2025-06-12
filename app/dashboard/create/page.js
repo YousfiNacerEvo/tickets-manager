@@ -52,29 +52,31 @@ export default function CreateTicket() {
     station: '',
     clientPhone: '',
     clientEmail: '',
-    image: null,
+    files: [],
     waitingClient: false,
     resolutionComment: '',
   });
-  const [imagePreview, setImagePreview] = useState(null);
+  const [fileList, setFileList] = useState([]);
   const fileInputRef = useRef();
 
-  // Gestion de l'upload d'image
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setTicket({ ...ticket, image: file });
-      setImagePreview(URL.createObjectURL(file));
+  // Gestion de l'upload de fichiers
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setTicket({ ...ticket, files: [...ticket.files, ...files] });
+      setFileList([...fileList, ...files]);
     }
   };
+
   const handleDrop = (e) => {
     e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      setTicket({ ...ticket, image: file });
-      setImagePreview(URL.createObjectURL(file));
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      setTicket({ ...ticket, files: [...ticket.files, ...files] });
+      setFileList([...fileList, ...files]);
     }
   };
+
   const handleDragOver = (e) => {
     e.preventDefault();
   };
@@ -152,9 +154,9 @@ export default function CreateTicket() {
             )}
             {step === 3 && (
               <StepAttachment 
-                imagePreview={imagePreview} 
+                fileList={fileList}
                 fileInputRef={fileInputRef} 
-                handleImageChange={handleImageChange} 
+                handleFileChange={handleFileChange} 
                 handleDrop={handleDrop} 
                 handleDragOver={handleDragOver} 
                 handlePrev={handlePrev} 

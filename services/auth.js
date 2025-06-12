@@ -2,10 +2,10 @@ const API_URL = "https://gestion-ticket-back-78nj.onrender.com";
 const API_URL_LOCAL = "http://localhost:10000";
 
 export async function Login(email, password) {
-  console.log(localStorage.getItem("token"))
+  console.log("-ok",localStorage.getItem("token"))
   try {
     console.log("api url", API_URL);
-    const response = await fetch(`${API_URL}/login`, {
+    const response = await fetch(`${API_URL_LOCAL}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -41,14 +41,15 @@ export function isAuthenticated() {
 
 export async function addAccount(email, password) {
   try {
-    const response = await fetch(`${API_URL}/add-account`, {
+    console.log("ca enrer dans la fonciton ")
+    const response = await fetch(`${API_URL_LOCAL}/add-account`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ email, password }),
     });
-
+    console.log("et ca cest apres le fetch")
     const data = await response.json();
     if (data.error) {
       throw new Error(data.error);
@@ -60,26 +61,34 @@ export async function addAccount(email, password) {
   }
 }
 
-export const forgetPassword = async (email) => {
+/**
+ * Requests a password reset email for the given email address.
+ * @param {string} email - The user's email address.
+ * @returns {Promise<Object>} - The response data from the backend.
+ * @throws {Error} - If the request fails or the backend returns an error.
+ */
+export async function requestPasswordReset(email) {
   try {
-    const response = await fetch("http://localhost:10000/api/forget-password", {
-      method: "POST",
+    const response = await fetch(`${API_URL_LOCAL}/auth/reset-password`, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Une erreur est survenue");
+      throw new Error(data.error || 'Une erreur est survenue lors de la demande de réinitialisation.');
     }
 
-    return await response.json();
+    return data;
   } catch (error) {
-    throw new Error(error.message || "Une erreur est survenue lors de la réinitialisation du mot de passe");
+    console.error('Erreur dans requestPasswordReset:', error);
+    throw error;
   }
-};
+}
 
 export const updatePassword = async (password, token) => {
   try {

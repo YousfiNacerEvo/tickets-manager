@@ -1,27 +1,41 @@
 const API_URL = "https://gestion-ticket-back-3.onrender.com"
-
+const API_URL_LOCAL = "http://localhost:10000";
 /**
  * Récupère toutes les informations d'un ticket par son ID
  * @param {string|number} ticketId
  * @param {string} token
  * @returns {Promise<Object>} Les informations du ticket
  */
-export async function getTicketById(ticketId, token) {
+export async function getTicketById(ticketId) {
+  const token = getToken();
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/tickets/${ticketId}`, {
+    const response = await fetch(`${API_URL_LOCAL}/tickets/${ticketId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
       cache: 'no-store',
     });
 
-    if (!response.ok) throw new Error('Erreur lors de la récupération du ticket.');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Erreur lors de la récupération du ticket.");
+    }
 
-    return await response.json();
+    const data = await response.json();
+
+    // Ajouter l'URL de base du backend aux URLs des fichiers
+    if (data && data.length > 0 && data[0].files) {
+      data[0].files = data[0].files.map(file => ({
+        ...file,
+        url: `${API_URL_LOCAL}${file.url}` // Ajouter l'URL de base
+      }));
+    }
+
+    console.log('Ticket récupéré:', data);
+    return data;
   } catch (error) {
     console.error('Erreur backend:', error);
     throw error;
@@ -50,7 +64,7 @@ export async function getAllTickets() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {//https://gestion-ticket-back-3.onrender.com/tickets
-    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/tickets`, {
+    const response = await fetch(`${API_URL_LOCAL}/tickets`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -76,7 +90,7 @@ export async function updateTicket(ticketId, ticketData) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/tickets/${ticketId}`, {
+    const response = await fetch(`${API_URL_LOCAL}/tickets/${ticketId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -116,7 +130,7 @@ export async function uploadTicketImage(imageFile) {
   formData.append('image', imageFile);
 
   try {
-    const response = await fetch(`https://gestion-ticket-back-3.onrender.com/tickets/upload`, {
+    const response = await fetch(`${API_URL_LOCAL}/tickets/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -127,9 +141,53 @@ export async function uploadTicketImage(imageFile) {
     if (!response.ok) throw new Error('Erreur lors de l\'upload de l\'image.');
 
     const data = await response.json();
-    return `https://gestion-ticket-back-3.onrender.com${data.imageUrl}`;
+    return `${API_URL_LOCAL}${data.imageUrl}`;
   } catch (error) {
     console.error('Erreur backend:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload des fichiers pour un ticket
+ * @param {File[]} files - Les fichiers à uploader
+ * @returns {Promise<string[]>} Les URLs des fichiers uploadés
+ */
+export async function uploadTicketFiles(files) {
+  const token = getToken();
+  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+
+  try {
+    const formData = new FormData();
+    
+    // Vérifier si files est un tableau ou un FileList
+    const filesArray = Array.isArray(files) ? files : Array.from(files);
+    
+    // Ajouter chaque fichier au FormData
+    filesArray.forEach((file, index) => {
+      formData.append('files', file);
+    });
+
+    console.log('Envoi des fichiers:', filesArray);
+
+    const response = await fetch(`${API_URL_LOCAL}/tickets/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Erreur lors de l'upload des fichiers.");
+    }
+
+    const data = await response.json();
+    console.log('Réponse du serveur:', data);
+    return data.urls;
+  } catch (error) {
+    console.error('Erreur lors de l\'upload des fichiers:', error);
     throw error;
   }
 }
@@ -140,19 +198,23 @@ export async function sendTicketToBackend(ticketData) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    // Si une image est présente, on l'upload d'abord
-    let imageUrl = null;
-    if (ticketData.image instanceof File) {
-      imageUrl = await uploadTicketImage(ticketData.image);
+    // Upload des fichiers si présents
+    let uploadedFiles = [];
+    if (ticketData.files && ticketData.files.length > 0) {
+      uploadedFiles = await uploadTicketFiles(ticketData.files);
     }
 
-    // On crée une copie des données du ticket sans l'image
-    const { image, ...ticketDataWithoutImage } = ticketData;
+    // On crée une copie des données du ticket sans les fichiers
+    const { files, ...ticketDataWithoutFiles } = ticketData;
     
-    // On ajoute l'URL de l'image si elle existe
+    // On ajoute les URLs des fichiers si elles existent
     const finalTicketData = {
-      ...ticketDataWithoutImage,
-      ...(imageUrl && { image: imageUrl }),
+      ...ticketDataWithoutFiles,
+      files: uploadedFiles.map(url => ({
+        url,
+        name: url.split('/').pop(),
+        type: url.split('.').pop()
+      })),
       client: ticketData.client || '',
       station: ticketData.station || '',
       client_phone: ticketData.clientPhone || '',
@@ -161,7 +223,7 @@ export async function sendTicketToBackend(ticketData) {
 
     console.log('Données envoyées au backend:', finalTicketData);
 
-    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/tickets`, {
+    const response = await fetch(`${API_URL_LOCAL}/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -182,14 +244,12 @@ export async function sendTicketToBackend(ticketData) {
   }
 }
 
-
-
 export async function getTicketsByStation() {
   const token = getToken();
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/stats/tickets-by-station`, {
+    const response = await fetch(`${API_URL_LOCAL}/stats/tickets-by-station`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -209,7 +269,7 @@ export async function getIncidentsByPriority() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/stats/incidents-by-priority`, {
+    const response = await fetch(`${API_URL_LOCAL}/stats/incidents-by-priority`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -229,7 +289,7 @@ export async function getNocOsticketCategories() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/stats/noc-osticket-categories`, {
+    const response = await fetch(`${API_URL_LOCAL}/stats/noc-osticket-categories`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -249,7 +309,7 @@ export async function getIncidentsByStatus() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`https://gestion-ticket-back-78nj.onrender.com/stats/incidents-by-status`, {
+    const response = await fetch(`${API_URL_LOCAL}/stats/incidents-by-status`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -260,6 +320,61 @@ export async function getIncidentsByStatus() {
     return await response.json();
   } catch (error) {
     console.error('Erreur:', error);
+    throw error;
+  }
+}
+
+/**
+ * Récupère les commentaires d'un ticket
+ * @param {string|number} ticketId - ID du ticket
+ * @returns {Promise<Array>} Liste des commentaires
+ */
+export async function getTicketComments(ticketId) {
+  const token = getToken();
+  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+
+  try {
+    const response = await fetch(`${API_URL_LOCAL}/tickets/${ticketId}/comments`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) throw new Error('Erreur lors de la récupération des commentaires.');
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur backend:', error);
+    throw error;
+  }
+}
+
+/**
+ * Ajoute un commentaire à un ticket
+ * @param {string|number} ticketId - ID du ticket
+ * @param {string} content - Contenu du commentaire
+ * @returns {Promise<Object>} Le commentaire ajouté
+ */
+export async function addTicketComment(ticketId, content) {
+  const token = getToken();
+  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+
+  try {
+    const response = await fetch(`${API_URL_LOCAL}/tickets/${ticketId}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content }),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) throw new Error('Erreur lors de l\'ajout du commentaire.');
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur backend:', error);
     throw error;
   }
 }

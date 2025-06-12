@@ -23,10 +23,12 @@ export default function AddAccount() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-
+    console.log("summbittt")
     try {
       // Créer l'utilisateur dans Supabase Auth
+      console.log("avant call de addcount");
       const { data, error } = await addAccount(formData.email, formData.password)
+      console.log("apres le call");
       router.push('/dashboard')
     } catch (err) {
       setError(err.message)

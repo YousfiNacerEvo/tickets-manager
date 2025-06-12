@@ -1,13 +1,15 @@
 "use client";
-import { FaPlus, FaList, FaUserPlus, FaChartBar, FaHome, FaSignOutAlt } from "react-icons/fa";
+import { FaPlus, FaList, FaUserPlus, FaChartBar, FaHome, FaSignOutAlt, FaFileAlt } from "react-icons/fa";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logout } from "@/services/auth";
 
+const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
 const menu = [
   { label: "Dashboard", icon: <FaChartBar />, href: "/dashboard" },
   { label: "Create Ticket", icon: <FaPlus />, href: "/dashboard/create" },
   { label: "Ticket Manager", icon: <FaList />, href: "/dashboard/tickets" },
+  { label: "Reporting", icon: <FaFileAlt />, href: "/dashboard/reporting" },
   { label: "Add Account", icon: <FaUserPlus />, href: "/dashboard/add-account" },
 ];
 
@@ -44,7 +46,7 @@ export default function Sidebar() {
         className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 transition mt-4"
       >
         <span className="text-lg"><FaSignOutAlt /></span>
-        <span>Déconnexion</span>
+        <span>Logout</span>
       </button>
       <div className="mt-auto text-xs text-gray-400 text-center pt-8">
         &copy; {new Date().getFullYear()} TicketApp

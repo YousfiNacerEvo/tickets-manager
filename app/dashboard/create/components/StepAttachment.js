@@ -1,80 +1,95 @@
 import React from 'react';
 
-export default function StepAttachment({ imagePreview, fileInputRef, handleImageChange, handleDrop, handleDragOver, handlePrev, handleSubmit, isLoading }) {
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Vérifier le type de fichier
-      if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image valide (JPG, PNG, etc.)');
+export default function StepAttachment({ fileList, fileInputRef, handleFileChange, handleDrop, handleDragOver, handlePrev, handleSubmit, isLoading }) {
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      // Vérifier la taille totale des fichiers (max 20MB)
+      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+      if (totalSize > 20 * 1024 * 1024) {
+        alert('La taille totale des fichiers ne doit pas dépasser 20MB');
         return;
       }
       
-      // Vérifier la taille du fichier (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('L\'image ne doit pas dépasser 5MB');
-        return;
-      }
-      
-      handleImageChange(e);
+      handleFileChange(e);
     }
   };
 
   const handleFileDrop = (e) => {
     e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      // Vérifier le type de fichier
-      if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image valide (JPG, PNG, etc.)');
-        return;
-      }
-      
-      // Vérifier la taille du fichier (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('L\'image ne doit pas dépasser 5MB');
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      // Vérifier la taille totale des fichiers (max 20MB)
+      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+      if (totalSize > 20 * 1024 * 1024) {
+        alert('La taille totale des fichiers ne doit pas dépasser 20MB');
         return;
       }
       
       const event = {
         target: {
-          files: [file]
+          files: e.dataTransfer.files
         }
       };
-      handleImageChange(event);
+      handleFileChange(event);
     }
+  };
+
+  const getFileIcon = (file) => {
+    if (file.type.startsWith('image/')) {
+      return (
+        <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      );
+    }
+    return (
+      <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+    );
   };
 
   return (
     <div className="space-y-6 text-black">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-          <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-          Image (optionnel)
+          <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Fichiers (optionnel)
         </label>
         <div
-          className="w-full h-40 border-2 border-dashed border-pink-300 rounded-lg flex flex-col items-center justify-center cursor-pointer bg-pink-50 hover:bg-pink-100 relative transition"
+          className="w-full min-h-40 border-2 border-dashed border-pink-300 rounded-lg flex flex-col items-center justify-center cursor-pointer bg-pink-50 hover:bg-pink-100 relative transition p-4"
           onDrop={handleFileDrop}
           onDragOver={handleDragOver}
           onClick={() => fileInputRef.current.click()}
         >
-          {imagePreview ? (
-            <img src={imagePreview} alt="Preview" className="h-full object-contain rounded-lg shadow" />
+          {fileList && fileList.length > 0 ? (
+            <div className="w-full space-y-2">
+              {fileList.map((file, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 bg-white rounded-lg shadow">
+                  {getFileIcon(file)}
+                  <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                  <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                </div>
+              ))}
+            </div>
           ) : (
             <>
               <svg className="w-12 h-12 text-pink-300 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              <span className="text-pink-400">Glissez-déposez une image ou cliquez pour sélectionner</span>
-              <span className="text-xs text-gray-500 mt-2">Formats acceptés : JPG, PNG (max 5MB)</span>
+              <span className="text-pink-400">Glissez-déposez des fichiers ou cliquez pour sélectionner</span>
+              <span className="text-xs text-gray-500 mt-2">Taille maximale totale : 20MB</span>
             </>
           )}
           <input
             type="file"
-            accept="image/*"
+            multiple
             ref={fileInputRef}
             className="hidden"
-            onChange={handleFileChange}
+            onChange={handleFileSelect}
           />
         </div>
       </div>
