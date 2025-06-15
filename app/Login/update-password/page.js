@@ -13,6 +13,20 @@ export default function UpdatePasswordPage() {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
+  useEffect(() => {
+    // Vérifier si le lien a expiré
+    const hash = window.location.hash;
+    if (hash && hash.includes('error=access_denied')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const errorDescription = params.get('error_description');
+      setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+      // Rediriger vers la page de demande de réinitialisation après 3 secondes
+      setTimeout(() => {
+        router.push('/Login/ResetPassword');
+      }, 3000);
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -30,6 +44,11 @@ export default function UpdatePasswordPage() {
       const hash = window.location.hash;
       if (!hash) {
         throw new Error('Lien de réinitialisation invalide');
+      }
+
+      // Vérifier si le lien a expiré
+      if (hash.includes('error=access_denied')) {
+        throw new Error('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
       }
 
       const params = new URLSearchParams(hash.substring(1));
@@ -62,10 +81,42 @@ export default function UpdatePasswordPage() {
     } catch (error) {
       console.error('Erreur lors de la mise à jour du mot de passe:', error);
       setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
+      if (error.message.includes('expiré')) {
+        // Rediriger vers la page de demande de réinitialisation après 3 secondes
+        setTimeout(() => {
+          router.push('/Login/ResetPassword');
+        }, 3000);
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Si le lien a expiré, afficher un message et un bouton pour demander un nouveau lien
+  if (error && error.includes('expiré')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Lien expiré
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              {error}
+            </p>
+          </div>
+          <div className="text-center">
+            <Link 
+              href="/Login/ResetPassword"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Demander un nouveau lien
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -127,7 +178,7 @@ export default function UpdatePasswordPage() {
             </div>
           )}
 
-          {error && (
+          {error && !error.includes('expiré') && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
