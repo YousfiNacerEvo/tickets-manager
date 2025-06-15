@@ -12,7 +12,7 @@ export async function fetchReportingData({ startDate, endDate, status, type, ass
     groupBy: groupBy || 'month'
   });
 
-  const response = await fetch(`${API_URL_LOCAL}/api/reporting?${queryParams}`);
+  const response = await fetch(`${API_URL}/api/reporting?${queryParams}`);
   if (!response.ok) {
     throw new Error('Erreur lors de la récupération des données');
   }

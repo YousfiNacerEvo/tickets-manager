@@ -5,7 +5,7 @@ export async function Login(email, password) {
   console.log("-ok",localStorage.getItem("token"))
   try {
     console.log("api url", API_URL);
-    const response = await fetch(`${API_URL_LOCAL}/login`, {
+    const response = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -42,7 +42,7 @@ export function isAuthenticated() {
 export async function addAccount(email, password) {
   try {
     console.log("ca enrer dans la fonciton ")
-    const response = await fetch(`${API_URL_LOCAL}/add-account`, {
+    const response = await fetch(`${API_URL}/add-account`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -69,7 +69,7 @@ export async function addAccount(email, password) {
  */
 export async function requestPasswordReset(email) {
   try {
-    const response = await fetch(`${API_URL_LOCAL}/auth/reset-password`, {
+    const response = await fetch(`${API_URL}/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ export async function requestPasswordReset(email) {
 
 export const updatePassword = async (password, token) => {
   try {
-    const response = await fetch("http://localhost:10000/api/update-password", {
+    const response = await fetch(`${API_URL}/api/update-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

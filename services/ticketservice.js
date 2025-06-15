@@ -11,7 +11,7 @@ export async function getTicketById(ticketId) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL_LOCAL}/tickets/${ticketId}`, {
+    const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -30,7 +30,7 @@ export async function getTicketById(ticketId) {
     if (data && data.length > 0 && data[0].files) {
       data[0].files = data[0].files.map(file => ({
         ...file,
-        url: `${API_URL_LOCAL}${file.url}` // Ajouter l'URL de base
+        url: `${API_URL}${file.url}` // Ajouter l'URL de base
       }));
     }
 
@@ -64,7 +64,7 @@ export async function getAllTickets() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {//https://gestion-ticket-back-3.onrender.com/tickets
-    const response = await fetch(`${API_URL_LOCAL}/tickets`, {
+    const response = await fetch(`${API_URL}/tickets`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -90,7 +90,7 @@ export async function updateTicket(ticketId, ticketData) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL_LOCAL}/tickets/${ticketId}`, {
+    const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ export async function uploadTicketImage(imageFile) {
   formData.append('image', imageFile);
 
   try {
-    const response = await fetch(`${API_URL_LOCAL}/tickets/upload`, {
+    const response = await fetch(`${API_URL}/tickets/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -141,7 +141,7 @@ export async function uploadTicketImage(imageFile) {
     if (!response.ok) throw new Error('Erreur lors de l\'upload de l\'image.');
 
     const data = await response.json();
-    return `${API_URL_LOCAL}${data.imageUrl}`;
+    return `${API_URL}${data.imageUrl}`;
   } catch (error) {
     console.error('Erreur backend:', error);
     throw error;
@@ -170,7 +170,7 @@ export async function uploadTicketFiles(files) {
 
     console.log('Envoi des fichiers:', filesArray);
 
-    const response = await fetch(`${API_URL_LOCAL}/tickets/upload`, {
+    const response = await fetch(`${API_URL}/tickets/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -223,7 +223,7 @@ export async function sendTicketToBackend(ticketData) {
 
     console.log('Données envoyées au backend:', finalTicketData);
 
-    const response = await fetch(`${API_URL_LOCAL}/tickets`, {
+    const response = await fetch(`${API_URL}/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -249,7 +249,7 @@ export async function getTicketsByStation() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL_LOCAL}/stats/tickets-by-station`, {
+    const response = await fetch(`${API_URL}/stats/tickets-by-station`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -269,7 +269,7 @@ export async function getIncidentsByPriority() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL_LOCAL}/stats/incidents-by-priority`, {
+    const response = await fetch(`${API_URL}/stats/incidents-by-priority`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -289,7 +289,7 @@ export async function getNocOsticketCategories() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL_LOCAL}/stats/noc-osticket-categories`, {
+    const response = await fetch(`${API_URL}/stats/noc-osticket-categories`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -309,7 +309,7 @@ export async function getIncidentsByStatus() {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL_LOCAL}/stats/incidents-by-status`, {
+    const response = await fetch(`${API_URL}/stats/incidents-by-status`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -334,7 +334,7 @@ export async function getTicketComments(ticketId) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL_LOCAL}/tickets/${ticketId}/comments`, {
+    const response = await fetch(`${API_URL}/tickets/${ticketId}/comments`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -361,7 +361,7 @@ export async function addTicketComment(ticketId, content) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
-    const response = await fetch(`${API_URL_LOCAL}/tickets/${ticketId}/comments`, {
+    const response = await fetch(`${API_URL}/tickets/${ticketId}/comments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
