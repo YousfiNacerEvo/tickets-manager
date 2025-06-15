@@ -14,27 +14,22 @@ export default function UpdatePasswordPage() {
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    // Écoute les changements d'état d'authentification pour détecter le token de récupération
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        // L'utilisateur vient de cliquer sur le lien de réinitialisation
-        // Ici, le client Supabase a déjà géré l'authentification temporaire.
-        // Nous n'avons pas besoin d'extraire manuellement le token de l'URL fragment
-        // si nous utilisons supabase.auth.updateUser() après.
-        console.log('PASSWORD_RECOVERY event detected');
-        // Potentiellement afficher le formulaire de changement de mot de passe ici
-      } else if (event === 'SIGNED_IN') {
-        // Si l'utilisateur est déjà connecté (par exemple via le lien de récupération)
-        // on pourrait vérifier si c'est une connexion temporaire pour changement de mot de passe
-        // et rediriger si nécessaire, ou simplement attendre l'événement PASSWORD_RECOVERY.
-        console.log('SIGNED_IN event detected');
-      } else if (event === 'SIGNED_OUT') {
-        // L'utilisateur s'est déconnecté
-        console.log('SIGNED_OUT event detected');
-      }
-    });
+    // Vérifier si nous avons un hash dans l'URL (token de réinitialisation)
+    const hash = window.location.hash;
+    if (hash) {
+      // Extraire le token du hash
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
 
-    return () => subscription.unsubscribe();
+      if (accessToken && refreshToken) {
+        // Définir la session avec les tokens
+        supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+      }
+    }
   }, []);
 
   const handleSubmit = async (e) => {
@@ -50,14 +45,21 @@ export default function UpdatePasswordPage() {
     }
 
     try {
-      // Mettre à jour le mot de passe de l'utilisateur actuellement authentifié (via le token de récupération)
-      const { data, error } = await supabase.auth.updateUser({
-        password: password,
+      // Récupérer la session actuelle
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+      
+      if (!session) {
+        throw new Error('Session d\'authentification manquante. Veuillez réessayer le lien de réinitialisation.');
+      }
+
+      // Mettre à jour le mot de passe
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password
       });
 
-      if (error) {
-        throw error;
-      }
+      if (updateError) throw updateError;
 
       setMessage('Votre mot de passe a été réinitialisé avec succès.');
       // Rediriger l'utilisateur vers la page de connexion après un court délai
@@ -72,9 +74,6 @@ export default function UpdatePasswordPage() {
       setIsLoading(false);
     }
   };
-
-  // Afficher le formulaire de nouveau mot de passe si un événement PASSWORD_RECOVERY a été détecté ou si la page est chargée via le lien
-  // Pour simplifier, on affiche toujours le formulaire sur cette page.
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
