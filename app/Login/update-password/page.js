@@ -13,25 +13,6 @@ export default function UpdatePasswordPage() {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
-  useEffect(() => {
-    // Vérifier si nous avons un hash dans l'URL (token de réinitialisation)
-    const hash = window.location.hash;
-    if (hash) {
-      // Extraire le token du hash
-      const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-
-      if (accessToken && refreshToken) {
-        // Définir la session avec les tokens
-        supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
-      }
-    }
-  }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -45,19 +26,30 @@ export default function UpdatePasswordPage() {
     }
 
     try {
-      // Récupérer la session actuelle
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) throw sessionError;
-      
-      if (!session) {
-        throw new Error('Session d\'authentification manquante. Veuillez réessayer le lien de réinitialisation.');
+      // Récupérer le token de réinitialisation depuis l'URL
+      const hash = window.location.hash;
+      if (!hash) {
+        throw new Error('Lien de réinitialisation invalide');
       }
 
-      // Mettre à jour le mot de passe
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password
-      });
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+
+      if (!accessToken || !refreshToken) {
+        throw new Error('Lien de réinitialisation invalide ou expiré');
+      }
+
+      // Mettre à jour le mot de passe avec le token de réinitialisation
+      const { error: updateError } = await supabase.auth.updateUser(
+        { password: password },
+        {
+          auth: {
+            access_token: accessToken,
+            refresh_token: refreshToken
+          }
+        }
+      );
 
       if (updateError) throw updateError;
 
