@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from '@supabase/supabase-js';
 
@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
@@ -33,7 +35,7 @@ export default function LoginPage() {
       localStorage.setItem('token', data.session.access_token);
       document.cookie = `token=${data.session.access_token}; path=/; secure; samesite=strict`;
 
-      router.replace("/dashboard");
+      router.replace(redirectTo);
     } catch (err) {
       setError(err.message || "Email ou mot de passe incorrect");
     } finally {

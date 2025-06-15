@@ -6,12 +6,15 @@ export function middleware(request) {
 
   // Si l'utilisateur n'est pas connecté et essaie d'accéder à une route protégée
   if (!token && pathname !== '/Login') {
-    return NextResponse.redirect(new URL('/Login', request.url))
+    const loginUrl = new URL('/Login', request.url)
+    loginUrl.searchParams.set('redirectTo', pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   // Si l'utilisateur est connecté et essaie d'accéder à la page de login
   if (token && pathname === '/Login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const redirectTo = request.nextUrl.searchParams.get('redirectTo') || '/dashboard'
+    return NextResponse.redirect(new URL(redirectTo, request.url))
   }
 
   return NextResponse.next()
