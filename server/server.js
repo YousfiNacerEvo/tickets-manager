@@ -74,7 +74,10 @@ async function authenticateToken(req, res, next) {
     return res.status(401).json({ error: 'Token invalide' });
   }
 
-  req.user = user;
+  req.user = {
+    ...user,
+    role: user.user_metadata?.role || 'user',
+  };
   next();
 }
 
@@ -399,6 +402,7 @@ app.get('/stats/incidents-by-status', async (req, res) => {
     const { data, error } = await supabase
       .from('tickets')
       .select('status')
+      
 
 
     if (error) throw error;
@@ -441,7 +445,7 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
       });
     }
 
-    const ticketUrl = `https://monapp.com/tickets/${ticketId}`;
+    const ticketUrl = `https://tickets-manager-kappa.vercel.app/dashboard/tickets/${ticketId}`;
 
     const mailOptions = {
       from: process.env.EMAIL_USER,

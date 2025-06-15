@@ -47,33 +47,49 @@ export default function ReportingPage() {
   const [groupBy, setGroupBy] = useState("month");
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [userChecked, setUserChecked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
-  const fetchReportData = async () => {
-    setLoading(true);
-    try {
-      const startDate = date.from ? date.from.toISOString() : new Date().toISOString();
-      const endDate = date.to ? date.to.toISOString() : startDate;
-      let reportingData = await fetchReportingData({
-        startDate,
-        endDate,
-        status,
-        type,
-        assignedUser,
-        category,
-        groupBy
-      });
-      setReportData(reportingData);
-    } catch (error) {
-      console.error('Erreur lors de la récupération des données:', error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    const u = localStorage.getItem('user');
+    const user = u ? JSON.parse(u) : null;
+    if (!user || user.user_metadata?.role !== 'admin') {
+      router.push('/dashboard');
+      setIsAdmin(false);
+    } else {
+      setIsAdmin(true);
     }
-  };
+    setUserChecked(true);
+  }, []);
 
   useEffect(() => {
+    if (!isAdmin) return;
+    const fetchReportData = async () => {
+      setLoading(true);
+      try {
+        const startDate = date.from ? date.from.toISOString() : new Date().toISOString();
+        const endDate = date.to ? date.to.toISOString() : startDate;
+        let reportingData = await fetchReportingData({
+          startDate,
+          endDate,
+          status,
+          type,
+          assignedUser,
+          category,
+          groupBy
+        });
+        setReportData(reportingData);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchReportData();
-  }, [date, status, type, assignedUser, category, groupBy]);
+  }, [isAdmin, date, status, type, assignedUser, category, groupBy]);
+
+  if (!userChecked || !isAdmin) return null;
 
   const exportToExcel = () => {
     if (!reportData?.tickets) return;

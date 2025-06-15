@@ -3,17 +3,26 @@ import { FaPlus, FaList, FaUserPlus, FaChartBar, FaHome, FaSignOutAlt, FaFileAlt
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logout } from "@/services/auth";
-
-const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
-const menu = [
-  { label: "Dashboard", icon: <FaChartBar />, href: "/dashboard" },
-  { label: "Create Ticket", icon: <FaPlus />, href: "/dashboard/create" },
-  { label: "Ticket Manager", icon: <FaList />, href: "/dashboard/tickets" },
-  { label: "Reporting", icon: <FaFileAlt />, href: "/dashboard/reporting" },
-  { label: "Add Account", icon: <FaUserPlus />, href: "/dashboard/add-account" },
-];
+import { useEffect, useState } from "react";
 
 export default function Sidebar() {
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const u = localStorage.getItem("user");
+      setUser(u ? JSON.parse(u) : null);
+    }
+  }, []);
+  const isAdmin = user?.user_metadata?.role === "admin";
+  const menu = [
+    { label: "Dashboard", icon: <FaChartBar />, href: "/dashboard" },
+    { label: "Create Ticket", icon: <FaPlus />, href: "/dashboard/create" },
+    { label: "Ticket Manager", icon: <FaList />, href: "/dashboard/tickets" },
+    ...(isAdmin ? [
+      { label: "Reporting", icon: <FaFileAlt />, href: "/dashboard/reporting" },
+      { label: "Add Account", icon: <FaUserPlus />, href: "/dashboard/add-account" },
+    ] : []),
+  ];
   const pathname = usePathname();
   const router = useRouter();
 

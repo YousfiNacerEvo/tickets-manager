@@ -1,8 +1,8 @@
 "use client"
 import React, { useState } from "react";
-import { Login } from "@/services/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from '@supabase/supabase-js';
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -11,18 +11,29 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      if (!email || !password) {
-        throw new Error("Veuillez remplir tous les champs");
-      }
+      if (!email || !password) throw new Error("Veuillez remplir tous les champs");
 
-      await Login(email, password);
-      router.push("/dashboard");
+      // Utilise le SDK Supabase pour le login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw new Error(error.message);
+
+      // Stocke le user et le token dans le localStorage
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.session.access_token);
+      document.cookie = `token=${data.session.access_token}; path=/; secure; samesite=strict`;
+
+      router.replace("/dashboard");
     } catch (err) {
       setError(err.message || "Email ou mot de passe incorrect");
     } finally {

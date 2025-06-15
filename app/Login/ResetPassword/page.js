@@ -22,7 +22,7 @@ export default function ResetPassword() {
 
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/Login/update-password`
+        redirectTo: `https://tickets-manager-kappa.vercel.app/Login/update-password`
       });
 
       if (error) {

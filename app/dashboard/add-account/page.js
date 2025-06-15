@@ -1,5 +1,5 @@
 "use client"
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { addAccount } from '../../../services/auth'
 import { useRouter } from 'next/navigation'
 
@@ -11,6 +11,18 @@ export default function AddAccount() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [userChecked, setUserChecked] = useState(false);
+
+  useEffect(() => {
+    const u = localStorage.getItem('user');
+    const user = u ? JSON.parse(u) : null;
+    if (!user || user.user_metadata?.role !== 'admin') {
+      router.push('/dashboard');
+    } else {
+      setUserChecked(true);
+    }
+  }, []);
+  if (!userChecked) return null;
 
   const handleChange = (e) => {
     setFormData({
