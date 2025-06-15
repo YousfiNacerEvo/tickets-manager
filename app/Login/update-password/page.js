@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
@@ -11,19 +11,25 @@ export default function UpdatePasswordPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    // Vérifier si le lien a expiré
+    // Vérifier si nous avons un token dans l'URL
     const hash = window.location.hash;
-    if (hash && hash.includes('error=access_denied')) {
+    console.log('Hash URL:', hash); // Debug log
+
+    if (hash) {
       const params = new URLSearchParams(hash.substring(1));
-      const errorDescription = params.get('error_description');
-      setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-      // Rediriger vers la page de demande de réinitialisation après 3 secondes
-      setTimeout(() => {
-        router.push('/Login/ResetPassword');
-      }, 3000);
+      console.log('Params:', Object.fromEntries(params.entries())); // Debug log
+
+      if (params.has('error')) {
+        const errorDescription = params.get('error_description');
+        setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+        setTimeout(() => {
+          router.push('/Login/ResetPassword');
+        }, 3000);
+      }
     }
   }, []);
 
@@ -42,18 +48,26 @@ export default function UpdatePasswordPage() {
     try {
       // Récupérer le token de réinitialisation depuis l'URL
       const hash = window.location.hash;
+      console.log('Hash dans handleSubmit:', hash); // Debug log
+
       if (!hash) {
         throw new Error('Lien de réinitialisation invalide');
       }
 
+      const params = new URLSearchParams(hash.substring(1));
+      console.log('Params dans handleSubmit:', Object.fromEntries(params.entries())); // Debug log
+
       // Vérifier si le lien a expiré
-      if (hash.includes('error=access_denied')) {
+      if (params.has('error')) {
         throw new Error('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
       }
 
-      const params = new URLSearchParams(hash.substring(1));
+      // Récupérer les tokens
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
+      const type = params.get('type');
+
+      console.log('Tokens:', { accessToken, refreshToken, type }); // Debug log
 
       if (!accessToken || !refreshToken) {
         throw new Error('Lien de réinitialisation invalide ou expiré');
@@ -70,7 +84,10 @@ export default function UpdatePasswordPage() {
         }
       );
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Erreur Supabase:', updateError); // Debug log
+        throw updateError;
+      }
 
       setMessage('Votre mot de passe a été réinitialisé avec succès.');
       // Rediriger l'utilisateur vers la page de connexion après un court délai
@@ -79,10 +96,9 @@ export default function UpdatePasswordPage() {
       }, 3000);
 
     } catch (error) {
-      console.error('Erreur lors de la mise à jour du mot de passe:', error);
+      console.error('Erreur complète:', error); // Debug log
       setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
       if (error.message.includes('expiré')) {
-        // Rediriger vers la page de demande de réinitialisation après 3 secondes
         setTimeout(() => {
           router.push('/Login/ResetPassword');
         }, 3000);
