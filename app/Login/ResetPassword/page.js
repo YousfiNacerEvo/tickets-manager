@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { requestPasswordReset } from '@/services/auth';
 
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
@@ -21,8 +20,12 @@ export default function ResetPassword() {
     setError('');
 
     try {
+      // Utiliser l'URL complète de votre site
+      const siteUrl = window.location.origin;
+      const redirectTo = `${siteUrl}/Login/update-password`;
+
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `https://tickets-manager-kappa.vercel.app/Login/update-password`
+        redirectTo: redirectTo
       });
 
       if (error) {
