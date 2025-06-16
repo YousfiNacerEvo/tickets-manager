@@ -1,14 +1,27 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    // Vérifier si nous avons des paramètres d'erreur dans l'URL
+    const errorParam = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+    
+    if (errorParam) {
+      setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,6 +38,7 @@ export default function ResetPassword() {
       const redirectTo = `${siteUrl}/Login/update-password`;
       console.log('URL de redirection:', redirectTo);
 
+      // D'abord, envoyer un email de réinitialisation
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectTo
       });
@@ -34,7 +48,7 @@ export default function ResetPassword() {
         throw resetError;
       }
 
-      setMessage('Un email de réinitialisation a été envoyé à votre adresse email.');
+      setMessage('Un email de réinitialisation a été envoyé à votre adresse email. Veuillez cliquer sur le lien dans l\'email pour continuer.');
     } catch (error) {
       console.error('Erreur complète:', error);
       setError(error.message || 'Une erreur est survenue lors de l\'envoi de l\'email de réinitialisation.');
