@@ -19,19 +19,39 @@ export default function UpdatePasswordForm() {
     const hash = window.location.hash;
     console.log('Hash URL:', hash); // Debug log
 
-    if (hash) {
-      const params = new URLSearchParams(hash.substring(1));
-      console.log('Params:', Object.fromEntries(params.entries())); // Debug log
-
-      if (params.has('error')) {
-        const errorDescription = params.get('error_description');
-        setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-        setTimeout(() => {
-          router.push('/Login/ResetPassword');
-        }, 3000);
-      }
+    if (!hash) {
+      setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
+      setTimeout(() => {
+        router.push('/Login/ResetPassword');
+      }, 3000);
+      return;
     }
-  }, []);
+
+    const params = new URLSearchParams(hash.substring(1));
+    console.log('Params:', Object.fromEntries(params.entries())); // Debug log
+
+    // Vérifier si le lien a expiré ou s'il y a une erreur
+    if (params.has('error')) {
+      const errorDescription = params.get('error_description');
+      setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+      setTimeout(() => {
+        router.push('/Login/ResetPassword');
+      }, 3000);
+      return;
+    }
+
+    // Vérifier la présence des tokens requis
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const type = params.get('type');
+
+    if (!accessToken || !refreshToken || type !== 'recovery') {
+      setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
+      setTimeout(() => {
+        router.push('/Login/ResetPassword');
+      }, 3000);
+    }
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,7 +89,7 @@ export default function UpdatePasswordForm() {
 
       console.log('Tokens:', { accessToken, refreshToken, type }); // Debug log
 
-      if (!accessToken || !refreshToken) {
+      if (!accessToken || !refreshToken || type !== 'recovery') {
         throw new Error('Lien de réinitialisation invalide ou expiré');
       }
 
@@ -98,7 +118,7 @@ export default function UpdatePasswordForm() {
     } catch (error) {
       console.error('Erreur complète:', error); // Debug log
       setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
-      if (error.message.includes('expiré')) {
+      if (error.message.includes('expiré') || error.message.includes('invalide')) {
         setTimeout(() => {
           router.push('/Login/ResetPassword');
         }, 3000);
