@@ -1,25 +1,46 @@
-import { NextResponse } from 'next/server'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { NextResponse } from 'next/server';
 
-export function middleware(request) {
-  const token = request.cookies.get('token')?.value
-  const { pathname } = request.nextUrl
+export async function middleware(req) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
 
-  // Si l'utilisateur n'est pas connecté et essaie d'accéder à une route protégée
-  if (!token && pathname !== '/Login') {
-    const loginUrl = new URL('/Login', request.url)
-    loginUrl.searchParams.set('redirectTo', pathname)
-    return NextResponse.redirect(loginUrl)
+  // Vérifier si l'utilisateur est sur une page de réinitialisation de mot de passe
+  const isResetPage = req.nextUrl.pathname.startsWith('/Login/update-password') || 
+                     req.nextUrl.pathname.startsWith('/Login/ResetPassword');
+
+  // Si c'est une page de réinitialisation, laisser passer
+  if (isResetPage) {
+    return res;
   }
 
-  // Si l'utilisateur est connecté et essaie d'accéder à la page de login
-  if (token && pathname === '/Login') {
-    const redirectTo = request.nextUrl.searchParams.get('redirectTo') || '/dashboard'
-    return NextResponse.redirect(new URL(redirectTo, request.url))
+  // Pour les autres pages, vérifier l'authentification
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // Si l'utilisateur n'est pas connecté et essaie d'accéder à une page protégée
+  if (!session && req.nextUrl.pathname.startsWith('/dashboard')) {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/Login';
+    return NextResponse.redirect(redirectUrl);
   }
 
-  return NextResponse.next()
+  // Si l'utilisateur est connecté et essaie d'accéder à la page de connexion
+  if (session && req.nextUrl.pathname === '/Login') {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/dashboard';
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  return res;
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/Login', '!/Login/update-password', '!/Login/ResetPassword']
+  matcher: [
+    '/dashboard/:path*',
+    '/Login',
+    '/Login/update-password',
+    '/Login/ResetPassword'
+  ]
 } 
