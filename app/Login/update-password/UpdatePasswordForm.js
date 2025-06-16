@@ -14,111 +14,6 @@ function UpdatePasswordFormContent() {
   const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
 
-  useEffect(() => {
-    const initializeReset = async () => {
-      try {
-        console.log('=== DÉBUT DE L\'INITIALISATION ===');
-        console.log('URL complète:', window.location.href);
-        console.log('Search params:', Object.fromEntries(searchParams.entries()));
-        console.log('Hash:', window.location.hash);
-
-        // Vérifier les paramètres d'erreur dans l'URL
-        const errorParam = searchParams.get('error');
-        const errorCode = searchParams.get('error_code');
-        const errorDescription = searchParams.get('error_description');
-        const resetCode = searchParams.get('code');
-        
-        console.log('Paramètres d\'erreur:', {
-          error: errorParam,
-          errorCode,
-          errorDescription,
-          resetCode
-        });
-
-        // Vérifier si nous avons un code de réinitialisation
-        if (resetCode) {
-          console.log('Code de réinitialisation trouvé:', resetCode);
-          try {
-            console.log('Tentative de réinitialisation avec le code...');
-            
-            // Utiliser la méthode correcte pour la réinitialisation
-            const { data, error: resetError } = await supabase.auth.verifyOtp({
-              token_hash: resetCode,
-              type: 'recovery'
-            });
-
-            if (resetError) {
-              console.error('❌ ERREUR lors de la vérification du code:', resetError);
-              throw resetError;
-            }
-
-            console.log('✅ Code vérifié avec succès');
-            return;
-          } catch (error) {
-            console.error('❌ ERREUR lors de la vérification du code:', error);
-            setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-            return;
-          }
-        }
-
-        // Vérifier si nous avons un hash dans l'URL
-        const hash = window.location.hash;
-        console.log('Hash URL:', hash);
-
-        if (!hash) {
-          console.log('❌ ERREUR: Pas de hash dans l\'URL');
-          setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
-          return;
-        }
-
-        // Traitement du hash
-        const params = new URLSearchParams(hash.substring(1));
-        console.log('Paramètres du hash:', Object.fromEntries(params.entries()));
-
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-
-        console.log('Tokens trouvés:', {
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          accessTokenLength: accessToken?.length,
-          refreshTokenLength: refreshToken?.length
-        });
-
-        if (!accessToken || !refreshToken) {
-          console.log('❌ ERREUR: Tokens manquants dans le hash');
-          setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
-          return;
-        }
-
-        try {
-          console.log('Tentative de définition de la session avec les tokens...');
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-
-          if (sessionError) {
-            console.error('❌ ERREUR lors de la définition de la session:', sessionError);
-            throw sessionError;
-          }
-
-          console.log('✅ Session définie avec succès');
-        } catch (error) {
-          console.error('❌ ERREUR lors de la définition de la session:', error);
-          setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-          return;
-        }
-
-      } catch (error) {
-        console.error('❌ ERREUR lors de l\'initialisation:', error);
-        setError('Une erreur est survenue. Veuillez demander un nouveau lien.');
-      }
-    };
-
-    initializeReset();
-  }, [router, supabase.auth, searchParams]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -131,58 +26,45 @@ function UpdatePasswordFormContent() {
       return;
     }
 
+    const code = searchParams.get('code');
+    console.log('Code de réinitialisation:', code);
+
+    if (!code) {
+      setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      console.log('Tentative de mise à jour du mot de passe...');
-      // Mettre à jour le mot de passe
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password
+      console.log('Tentative de réinitialisation du mot de passe...');
+      const { error: resetError } = await supabase.auth.verifyOtp({
+        type: 'recovery',
+        token: code,
+        newPassword: password
       });
 
-      if (updateError) {
-        console.error('❌ ERREUR lors de la mise à jour du mot de passe:', updateError);
-        throw updateError;
+      if (resetError) {
+        console.error('❌ ERREUR lors de la réinitialisation:', resetError);
+        throw resetError;
       }
 
-      console.log('✅ Mot de passe mis à jour avec succès');
+      console.log('✅ Mot de passe réinitialisé avec succès');
       setMessage('Votre mot de passe a été réinitialisé avec succès.');
-      // Rediriger l'utilisateur vers la page de connexion après un court délai
       setTimeout(() => {
         router.push('/Login');
       }, 3000);
 
     } catch (error) {
       console.error('❌ ERREUR complète:', error);
-      setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
+      if (error.message.includes('expired') || error.message.includes('invalid')) {
+        setError('Votre lien a expiré ou est invalide. Veuillez demander un nouveau lien.');
+      } else {
+        setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Si le lien a expiré, afficher un message et un bouton pour demander un nouveau lien
-  if (error && error.includes('expiré')) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Lien expiré
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              {error}
-            </p>
-          </div>
-          <div className="text-center">
-            <Link 
-              href="/Login/ResetPassword"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Demander un nouveau lien
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -254,6 +136,17 @@ function UpdatePasswordFormContent() {
               {isLoading ? 'Mise à jour en cours...' : 'Mettre à jour le mot de passe'}
             </button>
           </div>
+
+          {error && error.includes('expiré') && (
+            <div className="text-center">
+              <Link 
+                href="/Login/ResetPassword"
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Demander un nouveau lien
+              </Link>
+            </div>
+          )}
         </form>
       </div>
     </div>
