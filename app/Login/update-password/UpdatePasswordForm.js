@@ -17,6 +17,18 @@ export default function UpdatePasswordForm() {
   useEffect(() => {
     const initializeReset = async () => {
       try {
+        // Vérifier les paramètres d'erreur dans l'URL
+        const errorParam = searchParams.get('error');
+        const errorDescription = searchParams.get('error_description');
+        
+        if (errorParam) {
+          setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+          setTimeout(() => {
+            router.push('/Login/ResetPassword');
+          }, 3000);
+          return;
+        }
+
         // Vérifier si nous avons un token dans l'URL
         const hash = window.location.hash;
         console.log('Hash URL:', hash); // Debug log
@@ -79,7 +91,7 @@ export default function UpdatePasswordForm() {
     };
 
     initializeReset();
-  }, [router, supabase.auth]);
+  }, [router, supabase.auth, searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
