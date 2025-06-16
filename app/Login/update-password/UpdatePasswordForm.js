@@ -15,64 +15,70 @@ export default function UpdatePasswordForm() {
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    // Vérifier si nous avons un token dans l'URL
-    const hash = window.location.hash;
-    console.log('Hash URL:', hash); // Debug log
-
-    if (!hash) {
-      setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
-      setTimeout(() => {
-        router.push('/Login/ResetPassword');
-      }, 3000);
-      return;
-    }
-
-    const params = new URLSearchParams(hash.substring(1));
-    console.log('Params:', Object.fromEntries(params.entries())); // Debug log
-
-    // Vérifier si le lien a expiré ou s'il y a une erreur
-    if (params.has('error')) {
-      const errorDescription = params.get('error_description');
-      setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-      setTimeout(() => {
-        router.push('/Login/ResetPassword');
-      }, 3000);
-      return;
-    }
-
-    // Vérifier la présence des tokens requis
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const type = params.get('type');
-
-    if (!accessToken || !refreshToken) {
-      setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
-      setTimeout(() => {
-        router.push('/Login/ResetPassword');
-      }, 3000);
-      return;
-    }
-
-    // Vérifier si le token est valide
-    const checkToken = async () => {
+    const initializeReset = async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser(accessToken);
-        if (error || !user) {
+        // Vérifier si nous avons un token dans l'URL
+        const hash = window.location.hash;
+        console.log('Hash URL:', hash); // Debug log
+
+        if (!hash) {
+          setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
+          setTimeout(() => {
+            router.push('/Login/ResetPassword');
+          }, 3000);
+          return;
+        }
+
+        const params = new URLSearchParams(hash.substring(1));
+        console.log('Params:', Object.fromEntries(params.entries())); // Debug log
+
+        // Vérifier si le lien a expiré ou s'il y a une erreur
+        if (params.has('error')) {
+          const errorDescription = params.get('error_description');
+          setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+          setTimeout(() => {
+            router.push('/Login/ResetPassword');
+          }, 3000);
+          return;
+        }
+
+        // Récupérer les tokens
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (!accessToken || !refreshToken) {
+          setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
+          setTimeout(() => {
+            router.push('/Login/ResetPassword');
+          }, 3000);
+          return;
+        }
+
+        // Vérifier si le token est valide
+        const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
+        
+        if (userError || !user) {
           setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
           setTimeout(() => {
             router.push('/Login/ResetPassword');
           }, 3000);
+          return;
         }
+
+        // Stocker les tokens pour une utilisation ultérieure
+        localStorage.setItem('reset_access_token', accessToken);
+        localStorage.setItem('reset_refresh_token', refreshToken);
+
       } catch (error) {
-        console.error('Erreur lors de la vérification du token:', error);
-        setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+        console.error('Erreur lors de l\'initialisation:', error);
+        setError('Une erreur est survenue. Veuillez demander un nouveau lien.');
         setTimeout(() => {
           router.push('/Login/ResetPassword');
         }, 3000);
       }
     };
 
-    checkToken();
+    initializeReset();
   }, [router, supabase.auth]);
 
   const handleSubmit = async (e) => {
@@ -88,25 +94,9 @@ export default function UpdatePasswordForm() {
     }
 
     try {
-      // Récupérer le token de réinitialisation depuis l'URL
-      const hash = window.location.hash;
-      console.log('Hash dans handleSubmit:', hash); // Debug log
-
-      if (!hash) {
-        throw new Error('Lien de réinitialisation invalide');
-      }
-
-      const params = new URLSearchParams(hash.substring(1));
-      console.log('Params dans handleSubmit:', Object.fromEntries(params.entries())); // Debug log
-
-      // Vérifier si le lien a expiré
-      if (params.has('error')) {
-        throw new Error('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-      }
-
-      // Récupérer les tokens
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
+      // Récupérer les tokens stockés
+      const accessToken = localStorage.getItem('reset_access_token');
+      const refreshToken = localStorage.getItem('reset_refresh_token');
 
       if (!accessToken || !refreshToken) {
         throw new Error('Lien de réinitialisation invalide ou expiré');
@@ -127,6 +117,10 @@ export default function UpdatePasswordForm() {
         console.error('Erreur Supabase:', updateError); // Debug log
         throw updateError;
       }
+
+      // Nettoyer les tokens stockés
+      localStorage.removeItem('reset_access_token');
+      localStorage.removeItem('reset_refresh_token');
 
       setMessage('Votre mot de passe a été réinitialisé avec succès.');
       // Rediriger l'utilisateur vers la page de connexion après un court délai

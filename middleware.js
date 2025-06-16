@@ -21,5 +21,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/Login']
+  matcher: ['/dashboard/:path*', '/Login', '!/Login/update-password', '!/Login/ResetPassword']
 } 

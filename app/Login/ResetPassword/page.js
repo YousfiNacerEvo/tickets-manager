@@ -24,6 +24,8 @@ export default function ResetPassword() {
       const siteUrl = window.location.origin;
       const redirectTo = `${siteUrl}/Login/update-password`;
 
+      console.log('URL de redirection:', redirectTo); // Debug log
+
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectTo,
         options: {
@@ -35,12 +37,15 @@ export default function ResetPassword() {
       });
 
       if (error) {
+        console.error('Erreur Supabase:', error); // Debug log
         throw error;
       }
 
+      console.log('Réponse Supabase:', data); // Debug log
       setMessage('Si un compte avec cet email existe, un lien de réinitialisation a été envoyé.');
 
     } catch (error) {
+      console.error('Erreur complète:', error); // Debug log
       setError(error.message || 'Une erreur est survenue lors de la demande de réinitialisation.');
     } finally {
       setIsLoading(false);
