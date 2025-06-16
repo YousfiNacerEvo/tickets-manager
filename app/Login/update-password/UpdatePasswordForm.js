@@ -45,13 +45,35 @@ export default function UpdatePasswordForm() {
     const refreshToken = params.get('refresh_token');
     const type = params.get('type');
 
-    if (!accessToken || !refreshToken || type !== 'recovery') {
+    if (!accessToken || !refreshToken) {
       setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
       setTimeout(() => {
         router.push('/Login/ResetPassword');
       }, 3000);
+      return;
     }
-  }, [router]);
+
+    // Vérifier si le token est valide
+    const checkToken = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+        if (error || !user) {
+          setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+          setTimeout(() => {
+            router.push('/Login/ResetPassword');
+          }, 3000);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification du token:', error);
+        setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+        setTimeout(() => {
+          router.push('/Login/ResetPassword');
+        }, 3000);
+      }
+    };
+
+    checkToken();
+  }, [router, supabase.auth]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -85,11 +107,8 @@ export default function UpdatePasswordForm() {
       // Récupérer les tokens
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
-      const type = params.get('type');
 
-      console.log('Tokens:', { accessToken, refreshToken, type }); // Debug log
-
-      if (!accessToken || !refreshToken || type !== 'recovery') {
+      if (!accessToken || !refreshToken) {
         throw new Error('Lien de réinitialisation invalide ou expiré');
       }
 
