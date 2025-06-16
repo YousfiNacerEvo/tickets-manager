@@ -13,8 +13,8 @@ export async function middleware(req) {
 
   // Vérifier si c'est la page de mise à jour du mot de passe
   if (pathname.startsWith('/Login/update-password')) {
-    // Si l'URL contient un hash, permettre l'accès
-    if (req.url.includes('#')) {
+    // Si l'URL contient un hash ou des paramètres de token, permettre l'accès
+    if (req.url.includes('#') || req.url.includes('token=') || req.url.includes('type=')) {
       return res;
     }
     // Sinon, rediriger vers la page de réinitialisation

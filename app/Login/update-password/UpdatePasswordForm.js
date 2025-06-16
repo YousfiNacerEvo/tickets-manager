@@ -26,11 +26,15 @@ function UpdatePasswordFormContent() {
         const errorParam = searchParams.get('error');
         const errorCode = searchParams.get('error_code');
         const errorDescription = searchParams.get('error_description');
+        const type = searchParams.get('type');
+        const token = searchParams.get('token');
         
         console.log('Paramètres d\'erreur:', {
           error: errorParam,
           errorCode,
-          errorDescription
+          errorDescription,
+          type,
+          token
         });
         
         if (errorParam) {
@@ -47,8 +51,8 @@ function UpdatePasswordFormContent() {
         const hash = window.location.hash;
         console.log('Hash URL:', hash);
 
-        if (!hash) {
-          console.log('Pas de hash dans l\'URL');
+        if (!hash && !token) {
+          console.log('Pas de hash ou token dans l\'URL');
           setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
           setTimeout(() => {
             router.push('/Login/ResetPassword');
@@ -56,54 +60,77 @@ function UpdatePasswordFormContent() {
           return;
         }
 
-        const params = new URLSearchParams(hash.substring(1));
-        console.log('Paramètres du hash:', Object.fromEntries(params.entries()));
+        // Si nous avons un token dans les paramètres de l'URL
+        if (token && type === 'recovery') {
+          try {
+            const { error: verifyError } = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: 'recovery'
+            });
 
-        // Vérifier si le lien a expiré ou s'il y a une erreur
-        if (params.has('error')) {
-          console.log('Erreur détectée dans le hash');
-          const errorDescription = params.get('error_description');
-          setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-          setTimeout(() => {
-            router.push('/Login/ResetPassword');
-          }, 3000);
-          return;
+            if (verifyError) {
+              throw verifyError;
+            }
+
+            console.log('Token vérifié avec succès');
+            return;
+          } catch (error) {
+            console.error('Erreur de vérification du token:', error);
+            setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+            setTimeout(() => {
+              router.push('/Login/ResetPassword');
+            }, 3000);
+            return;
+          }
         }
 
-        // Récupérer les tokens
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
+        // Traitement du hash si présent
+        if (hash) {
+          const params = new URLSearchParams(hash.substring(1));
+          console.log('Paramètres du hash:', Object.fromEntries(params.entries()));
 
-        console.log('Tokens présents:', {
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken
-        });
+          if (params.has('error')) {
+            console.log('Erreur détectée dans le hash');
+            const errorDescription = params.get('error_description');
+            setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+            setTimeout(() => {
+              router.push('/Login/ResetPassword');
+            }, 3000);
+            return;
+          }
 
-        if (!accessToken || !refreshToken) {
-          console.log('Tokens manquants');
-          setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
-          setTimeout(() => {
-            router.push('/Login/ResetPassword');
-          }, 3000);
-          return;
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (!accessToken || !refreshToken) {
+            console.log('Tokens manquants dans le hash');
+            setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
+            setTimeout(() => {
+              router.push('/Login/ResetPassword');
+            }, 3000);
+            return;
+          }
+
+          try {
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+
+            if (sessionError) {
+              throw sessionError;
+            }
+
+            console.log('Session définie avec succès');
+          } catch (error) {
+            console.error('Erreur lors de la définition de la session:', error);
+            setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+            setTimeout(() => {
+              router.push('/Login/ResetPassword');
+            }, 3000);
+            return;
+          }
         }
-
-        // Définir la session avec les tokens
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
-
-        if (sessionError) {
-          console.error('Erreur lors de la définition de la session:', sessionError);
-          setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-          setTimeout(() => {
-            router.push('/Login/ResetPassword');
-          }, 3000);
-          return;
-        }
-
-        console.log('Session définie avec succès');
 
       } catch (error) {
         console.error('Erreur lors de l\'initialisation:', error);
