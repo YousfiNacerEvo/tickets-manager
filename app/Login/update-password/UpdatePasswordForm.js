@@ -41,15 +41,18 @@ function UpdatePasswordFormContent() {
           try {
             console.log('Tentative de réinitialisation avec le code...');
             
-            // Utiliser la méthode correcte pour vérifier le code
-            const { data, error: resetError } = await supabase.auth.exchangeCodeForSession(resetCode);
+            // Utiliser la méthode correcte pour la réinitialisation
+            const { data, error: resetError } = await supabase.auth.verifyOtp({
+              token_hash: resetCode,
+              type: 'recovery'
+            });
 
             if (resetError) {
               console.error('❌ ERREUR lors de la vérification du code:', resetError);
               throw resetError;
             }
 
-            console.log('✅ Code vérifié avec succès, session établie');
+            console.log('✅ Code vérifié avec succès');
             return;
           } catch (error) {
             console.error('❌ ERREUR lors de la vérification du code:', error);
