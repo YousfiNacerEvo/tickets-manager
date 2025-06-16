@@ -6,11 +6,22 @@ export async function middleware(req) {
   const supabase = createMiddlewareClient({ req, res });
 
   // Vérifier si l'utilisateur est sur une page de réinitialisation de mot de passe
-  const isResetPage = req.nextUrl.pathname.startsWith('/Login/update-password') || 
-                     req.nextUrl.pathname.startsWith('/Login/ResetPassword');
+  const isResetPage = req.nextUrl.pathname.startsWith('/Login/ResetPassword');
+  const isUpdatePasswordPage = req.nextUrl.pathname.startsWith('/Login/update-password');
 
-  // Si c'est une page de réinitialisation, laisser passer
+  // Si c'est la page de demande de réinitialisation, laisser passer
   if (isResetPage) {
+    return res;
+  }
+
+  // Pour la page de mise à jour du mot de passe, vérifier le hash dans l'URL
+  if (isUpdatePasswordPage) {
+    const hash = req.nextUrl.hash;
+    if (!hash) {
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/Login/ResetPassword';
+      return NextResponse.redirect(redirectUrl);
+    }
     return res;
   }
 

@@ -88,18 +88,14 @@ export default function UpdatePasswordForm() {
           return;
         }
 
-        // Vérifier si le token est valide
-        console.log('Vérification du token avec Supabase');
-        const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-        
-        console.log('Résultat de la vérification:', {
-          hasUser: !!user,
-          hasError: !!userError,
-          error: userError
+        // Définir la session avec les tokens
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
         });
-        
-        if (userError || !user) {
-          console.log('Token invalide ou expiré');
+
+        if (sessionError) {
+          console.error('Erreur lors de la définition de la session:', sessionError);
           setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
           setTimeout(() => {
             router.push('/Login/ResetPassword');
@@ -107,10 +103,7 @@ export default function UpdatePasswordForm() {
           return;
         }
 
-        console.log('Token valide, stockage des tokens');
-        // Stocker les tokens pour une utilisation ultérieure
-        localStorage.setItem('reset_access_token', accessToken);
-        localStorage.setItem('reset_refresh_token', refreshToken);
+        console.log('Session définie avec succès');
 
       } catch (error) {
         console.error('Erreur lors de l\'initialisation:', error);
@@ -137,33 +130,15 @@ export default function UpdatePasswordForm() {
     }
 
     try {
-      // Récupérer les tokens stockés
-      const accessToken = localStorage.getItem('reset_access_token');
-      const refreshToken = localStorage.getItem('reset_refresh_token');
-
-      if (!accessToken || !refreshToken) {
-        throw new Error('Lien de réinitialisation invalide ou expiré');
-      }
-
-      // Mettre à jour le mot de passe avec le token de réinitialisation
-      const { error: updateError } = await supabase.auth.updateUser(
-        { password: password },
-        {
-          auth: {
-            access_token: accessToken,
-            refresh_token: refreshToken
-          }
-        }
-      );
+      // Mettre à jour le mot de passe
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password
+      });
 
       if (updateError) {
-        console.error('Erreur Supabase:', updateError); // Debug log
+        console.error('Erreur Supabase:', updateError);
         throw updateError;
       }
-
-      // Nettoyer les tokens stockés
-      localStorage.removeItem('reset_access_token');
-      localStorage.removeItem('reset_refresh_token');
 
       setMessage('Votre mot de passe a été réinitialisé avec succès.');
       // Rediriger l'utilisateur vers la page de connexion après un court délai
@@ -172,7 +147,7 @@ export default function UpdatePasswordForm() {
       }, 3000);
 
     } catch (error) {
-      console.error('Erreur complète:', error); // Debug log
+      console.error('Erreur complète:', error);
       setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
       if (error.message.includes('expiré') || error.message.includes('invalide')) {
         setTimeout(() => {
