@@ -37,10 +37,8 @@ function UpdatePasswordFormContent() {
 
     try {
       console.log('Tentative de réinitialisation du mot de passe...');
-      const { error: resetError } = await supabase.auth.verifyOtp({
-        type: 'recovery',
-        token: code,
-        newPassword: password
+      const { error: resetError } = await supabase.auth.updateUser({
+        password: password
       });
 
       if (resetError) {
