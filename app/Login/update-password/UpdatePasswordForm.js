@@ -17,13 +17,27 @@ export default function UpdatePasswordForm() {
   useEffect(() => {
     const initializeReset = async () => {
       try {
+        console.log('=== Début de l\'initialisation ===');
+        console.log('URL complète:', window.location.href);
+        console.log('Search params:', Object.fromEntries(searchParams.entries()));
+        console.log('Hash:', window.location.hash);
+
         // Vérifier les paramètres d'erreur dans l'URL
         const errorParam = searchParams.get('error');
+        const errorCode = searchParams.get('error_code');
         const errorDescription = searchParams.get('error_description');
         
+        console.log('Paramètres d\'erreur:', {
+          error: errorParam,
+          errorCode,
+          errorDescription
+        });
+        
         if (errorParam) {
+          console.log('Erreur détectée dans l\'URL');
           setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
           setTimeout(() => {
+            console.log('Redirection vers ResetPassword');
             router.push('/Login/ResetPassword');
           }, 3000);
           return;
@@ -31,9 +45,10 @@ export default function UpdatePasswordForm() {
 
         // Vérifier si nous avons un token dans l'URL
         const hash = window.location.hash;
-        console.log('Hash URL:', hash); // Debug log
+        console.log('Hash URL:', hash);
 
         if (!hash) {
+          console.log('Pas de hash dans l\'URL');
           setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
           setTimeout(() => {
             router.push('/Login/ResetPassword');
@@ -42,10 +57,11 @@ export default function UpdatePasswordForm() {
         }
 
         const params = new URLSearchParams(hash.substring(1));
-        console.log('Params:', Object.fromEntries(params.entries())); // Debug log
+        console.log('Paramètres du hash:', Object.fromEntries(params.entries()));
 
         // Vérifier si le lien a expiré ou s'il y a une erreur
         if (params.has('error')) {
+          console.log('Erreur détectée dans le hash');
           const errorDescription = params.get('error_description');
           setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
           setTimeout(() => {
@@ -58,7 +74,13 @@ export default function UpdatePasswordForm() {
         const accessToken = params.get('access_token');
         const refreshToken = params.get('refresh_token');
 
+        console.log('Tokens présents:', {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken
+        });
+
         if (!accessToken || !refreshToken) {
+          console.log('Tokens manquants');
           setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
           setTimeout(() => {
             router.push('/Login/ResetPassword');
@@ -67,9 +89,17 @@ export default function UpdatePasswordForm() {
         }
 
         // Vérifier si le token est valide
+        console.log('Vérification du token avec Supabase');
         const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
         
+        console.log('Résultat de la vérification:', {
+          hasUser: !!user,
+          hasError: !!userError,
+          error: userError
+        });
+        
         if (userError || !user) {
+          console.log('Token invalide ou expiré');
           setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
           setTimeout(() => {
             router.push('/Login/ResetPassword');
@@ -77,6 +107,7 @@ export default function UpdatePasswordForm() {
           return;
         }
 
+        console.log('Token valide, stockage des tokens');
         // Stocker les tokens pour une utilisation ultérieure
         localStorage.setItem('reset_access_token', accessToken);
         localStorage.setItem('reset_refresh_token', refreshToken);
