@@ -22,10 +22,12 @@ function UpdatePasswordFormContent() {
         console.log('Search params:', Object.fromEntries(searchParams.entries()));
 
         const code = searchParams.get('code');
+        const email = searchParams.get('email');
         console.log('Code de réinitialisation:', code);
+        console.log('Email:', email);
 
-        if (!code) {
-          console.log('❌ ERREUR: Pas de code dans l\'URL');
+        if (!code || !email) {
+          console.log('❌ ERREUR: Code ou email manquant dans l\'URL');
           setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
           return;
         }
@@ -34,7 +36,8 @@ function UpdatePasswordFormContent() {
           console.log('Tentative de vérification du code...');
           const { error: verifyError } = await supabase.auth.verifyOtp({
             type: 'recovery',
-            token: code
+            token: code,
+            email: email
           });
 
           if (verifyError) {
