@@ -26,12 +26,38 @@ function UpdatePasswordFormContent() {
         const errorParam = searchParams.get('error');
         const errorCode = searchParams.get('error_code');
         const errorDescription = searchParams.get('error_description');
+        const resetCode = searchParams.get('code');
         
         console.log('Paramètres d\'erreur:', {
           error: errorParam,
           errorCode,
-          errorDescription
+          errorDescription,
+          resetCode
         });
+
+        // Vérifier si nous avons un code de réinitialisation
+        if (resetCode) {
+          console.log('Code de réinitialisation trouvé:', resetCode);
+          try {
+            console.log('Tentative de réinitialisation avec le code...');
+            const { error: resetError } = await supabase.auth.verifyOtp({
+              token_hash: resetCode,
+              type: 'recovery'
+            });
+
+            if (resetError) {
+              console.error('❌ ERREUR lors de la vérification du code:', resetError);
+              throw resetError;
+            }
+
+            console.log('✅ Code vérifié avec succès');
+            return;
+          } catch (error) {
+            console.error('❌ ERREUR lors de la vérification du code:', error);
+            setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+            return;
+          }
+        }
 
         // Vérifier si nous avons un hash dans l'URL
         const hash = window.location.hash;
