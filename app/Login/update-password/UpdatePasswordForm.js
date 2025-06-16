@@ -33,15 +33,7 @@ function UpdatePasswordFormContent() {
           errorDescription
         });
         
-        if (errorParam) {
-          console.log('Erreur détectée dans l\'URL');
-          setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-          setTimeout(() => {
-            console.log('Redirection vers ResetPassword');
-            router.push('/Login/ResetPassword');
-          }, 3000);
-          return;
-        }
+        
 
         // Vérifier si nous avons un hash dans l'URL
         const hash = window.location.hash;
