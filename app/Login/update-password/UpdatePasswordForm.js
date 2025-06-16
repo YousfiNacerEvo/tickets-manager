@@ -17,7 +17,7 @@ function UpdatePasswordFormContent() {
   useEffect(() => {
     const initializeReset = async () => {
       try {
-        console.log('=== Début de l\'initialisation ===');
+        console.log('=== DÉBUT DE L\'INITIALISATION ===');
         console.log('URL complète:', window.location.href);
         console.log('Search params:', Object.fromEntries(searchParams.entries()));
         console.log('Hash:', window.location.hash);
@@ -32,57 +32,59 @@ function UpdatePasswordFormContent() {
           errorCode,
           errorDescription
         });
-        
-        
 
         // Vérifier si nous avons un hash dans l'URL
         const hash = window.location.hash;
         console.log('Hash URL:', hash);
 
-       
+        if (!hash) {
+          console.log('❌ ERREUR: Pas de hash dans l\'URL');
+          setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
+          return;
+        }
 
         // Traitement du hash
         const params = new URLSearchParams(hash.substring(1));
         console.log('Paramètres du hash:', Object.fromEntries(params.entries()));
 
-        
-
         const accessToken = params.get('access_token');
         const refreshToken = params.get('refresh_token');
 
+        console.log('Tokens trouvés:', {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          accessTokenLength: accessToken?.length,
+          refreshTokenLength: refreshToken?.length
+        });
+
         if (!accessToken || !refreshToken) {
-          console.log('Tokens manquants dans le hash');
+          console.log('❌ ERREUR: Tokens manquants dans le hash');
           setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
-          setTimeout(() => {
-           
-          }, 3000);
           return;
         }
 
         try {
+          console.log('Tentative de définition de la session avec les tokens...');
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
 
           if (sessionError) {
+            console.error('❌ ERREUR lors de la définition de la session:', sessionError);
             throw sessionError;
           }
 
-          console.log('Session définie avec succès');
+          console.log('✅ Session définie avec succès');
         } catch (error) {
-          console.error('Erreur lors de la définition de la session:', error);
+          console.error('❌ ERREUR lors de la définition de la session:', error);
           setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-          
           return;
         }
 
       } catch (error) {
-        console.error('Erreur lors de l\'initialisation:', error);
+        console.error('❌ ERREUR lors de l\'initialisation:', error);
         setError('Une erreur est survenue. Veuillez demander un nouveau lien.');
-        setTimeout(() => {
-          
-        }, 3000);
       }
     };
 
@@ -102,16 +104,18 @@ function UpdatePasswordFormContent() {
     }
 
     try {
+      console.log('Tentative de mise à jour du mot de passe...');
       // Mettre à jour le mot de passe
       const { error: updateError } = await supabase.auth.updateUser({
         password: password
       });
 
       if (updateError) {
-        console.error('Erreur Supabase:', updateError);
+        console.error('❌ ERREUR lors de la mise à jour du mot de passe:', updateError);
         throw updateError;
       }
 
+      console.log('✅ Mot de passe mis à jour avec succès');
       setMessage('Votre mot de passe a été réinitialisé avec succès.');
       // Rediriger l'utilisateur vers la page de connexion après un court délai
       setTimeout(() => {
@@ -119,13 +123,8 @@ function UpdatePasswordFormContent() {
       }, 3000);
 
     } catch (error) {
-      console.error('Erreur complète:', error);
+      console.error('❌ ERREUR complète:', error);
       setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
-      if (error.message.includes('expiré') || error.message.includes('invalide')) {
-        setTimeout(() => {
-          
-        }, 3000);
-      }
     } finally {
       setIsLoading(false);
     }
