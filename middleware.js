@@ -6,6 +6,9 @@ export async function middleware(req) {
   const supabase = createMiddlewareClient({ req, res });
   const { pathname } = req.nextUrl;
 
+  console.log('Middleware - URL:', req.url);
+  console.log('Middleware - Pathname:', pathname);
+
   // Vérifier si c'est une page de réinitialisation de mot de passe
   if (pathname.startsWith('/Login/ResetPassword')) {
     return res;
@@ -13,12 +16,11 @@ export async function middleware(req) {
 
   // Vérifier si c'est la page de mise à jour du mot de passe
   if (pathname.startsWith('/Login/update-password')) {
-    // Si l'URL contient un hash ou des paramètres de token, permettre l'accès
-    if (req.url.includes('#') || req.url.includes('token=') || req.url.includes('type=')) {
-      return res;
-    }
-    // Sinon, rediriger vers la page de réinitialisation
-    return NextResponse.redirect(new URL('/Login/ResetPassword', req.url));
+    console.log('Middleware - Page update-password détectée');
+    console.log('Middleware - URL complète:', req.url);
+    
+    // Permettre l'accès à la page update-password
+    return res;
   }
 
   // Vérifier la session pour les autres routes protégées
