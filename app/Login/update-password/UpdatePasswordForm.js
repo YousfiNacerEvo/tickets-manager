@@ -39,28 +39,13 @@ function UpdatePasswordFormContent() {
         const hash = window.location.hash;
         console.log('Hash URL:', hash);
 
-        if (!hash) {
-          console.log('Pas de hash dans l\'URL');
-          setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
-          setTimeout(() => {
-            router.push('/Login/ResetPassword');
-          }, 3000);
-          return;
-        }
+       
 
         // Traitement du hash
         const params = new URLSearchParams(hash.substring(1));
         console.log('Paramètres du hash:', Object.fromEntries(params.entries()));
 
-        if (params.has('error')) {
-          console.log('Erreur détectée dans le hash');
-          const errorDescription = params.get('error_description');
-          setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-          setTimeout(() => {
-            router.push('/Login/ResetPassword');
-          }, 3000);
-          return;
-        }
+        
 
         const accessToken = params.get('access_token');
         const refreshToken = params.get('refresh_token');
@@ -69,7 +54,7 @@ function UpdatePasswordFormContent() {
           console.log('Tokens manquants dans le hash');
           setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
           setTimeout(() => {
-            router.push('/Login/ResetPassword');
+           
           }, 3000);
           return;
         }
@@ -88,9 +73,7 @@ function UpdatePasswordFormContent() {
         } catch (error) {
           console.error('Erreur lors de la définition de la session:', error);
           setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-          setTimeout(() => {
-            router.push('/Login/ResetPassword');
-          }, 3000);
+          
           return;
         }
 
@@ -98,7 +81,7 @@ function UpdatePasswordFormContent() {
         console.error('Erreur lors de l\'initialisation:', error);
         setError('Une erreur est survenue. Veuillez demander un nouveau lien.');
         setTimeout(() => {
-          router.push('/Login/ResetPassword');
+          
         }, 3000);
       }
     };
@@ -140,7 +123,7 @@ function UpdatePasswordFormContent() {
       setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
       if (error.message.includes('expiré') || error.message.includes('invalide')) {
         setTimeout(() => {
-          router.push('/Login/ResetPassword');
+          
         }, 3000);
       }
     } finally {
