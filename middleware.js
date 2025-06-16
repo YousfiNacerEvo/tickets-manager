@@ -25,19 +25,9 @@ export async function middleware(req) {
     const code = req.nextUrl.searchParams.get('code');
     console.log('Code de réinitialisation présent:', !!code);
 
-    if (code) {
-      console.log('Code trouvé - Accès autorisé à update-password');
-      return res;
-    }
-
-    // Si pas de code, vérifier le hash
-    if (req.url.includes('#')) {
-      console.log('Hash trouvé - Accès autorisé à update-password');
-      return res;
-    }
-
-    console.log('Aucun code ou hash trouvé - Redirection vers ResetPassword');
-    return NextResponse.redirect(new URL('/Login/ResetPassword', req.url));
+    // Toujours permettre l'accès à la page update-password
+    console.log('Accès autorisé à update-password');
+    return res;
   }
 
   // Vérifier la session pour les autres routes protégées
