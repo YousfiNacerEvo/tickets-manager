@@ -41,9 +41,6 @@ function ResetPasswordForm() {
       // D'abord, envoyer un email de réinitialisation
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectTo,
-        options: {
-          shouldCreateUser: false
-        }
       });
 
       if (resetError) {
