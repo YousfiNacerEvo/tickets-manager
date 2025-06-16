@@ -6,21 +6,38 @@ export async function middleware(req) {
   const supabase = createMiddlewareClient({ req, res });
   const { pathname } = req.nextUrl;
 
-  console.log('Middleware - URL:', req.url);
-  console.log('Middleware - Pathname:', pathname);
+  console.log('=== MIDDLEWARE ===');
+  console.log('URL complète:', req.url);
+  console.log('Pathname:', pathname);
+  console.log('Search params:', req.nextUrl.searchParams.toString());
 
   // Vérifier si c'est une page de réinitialisation de mot de passe
   if (pathname.startsWith('/Login/ResetPassword')) {
+    console.log('Page ResetPassword détectée - Accès autorisé');
     return res;
   }
 
   // Vérifier si c'est la page de mise à jour du mot de passe
   if (pathname.startsWith('/Login/update-password')) {
-    console.log('Middleware - Page update-password détectée');
-    console.log('Middleware - URL complète:', req.url);
+    console.log('Page update-password détectée');
     
-    // Permettre l'accès à la page update-password
-    return res;
+    // Vérifier si nous avons un code de réinitialisation
+    const code = req.nextUrl.searchParams.get('code');
+    console.log('Code de réinitialisation présent:', !!code);
+
+    if (code) {
+      console.log('Code trouvé - Accès autorisé à update-password');
+      return res;
+    }
+
+    // Si pas de code, vérifier le hash
+    if (req.url.includes('#')) {
+      console.log('Hash trouvé - Accès autorisé à update-password');
+      return res;
+    }
+
+    console.log('Aucun code ou hash trouvé - Redirection vers ResetPassword');
+    return NextResponse.redirect(new URL('/Login/ResetPassword', req.url));
   }
 
   // Vérifier la session pour les autres routes protégées
