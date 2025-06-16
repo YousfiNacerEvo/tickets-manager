@@ -9,40 +9,30 @@ export async function middleware(req) {
   console.log('=== MIDDLEWARE ===');
   console.log('URL complète:', req.url);
   console.log('Pathname:', pathname);
-  console.log('Search params:', req.nextUrl.searchParams.toString());
+  console.log('Search params:', Object.fromEntries(req.nextUrl.searchParams.entries()));
 
-  // Vérifier si c'est une page de réinitialisation de mot de passe
-  if (pathname.startsWith('/Login/ResetPassword')) {
-    console.log('Page ResetPassword détectée - Accès autorisé');
-    return res;
-  }
-
-  // Vérifier si c'est la page de mise à jour du mot de passe
-  if (pathname.startsWith('/Login/update-password')) {
-    console.log('Page update-password détectée');
-    
-    // Vérifier si nous avons un code de réinitialisation
-    const code = req.nextUrl.searchParams.get('code');
-    console.log('Code de réinitialisation présent:', !!code);
-
-    // Toujours permettre l'accès à la page update-password
-    console.log('Accès autorisé à update-password');
-    return res;
-  }
-
-  // Vérifier la session pour les autres routes protégées
+  // Vérifier la session
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Si l'utilisateur n'est pas connecté et essaie d'accéder au dashboard
-  if (!session && pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/Login', req.url));
+  // Routes publiques qui ne nécessitent pas d'authentification
+  const publicRoutes = ['/Login', '/Login/ResetPassword', '/Login/update-password'];
+  
+  // Vérifier si la route actuelle est une route publique
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+
+  // Si c'est une route publique, permettre l'accès
+  if (isPublicRoute) {
+    console.log('Route publique détectée, accès autorisé');
+    return res;
   }
 
-  // Si l'utilisateur est connecté et essaie d'accéder à la page de connexion
-  if (session && pathname === '/Login') {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+  // Si l'utilisateur n'est pas connecté et essaie d'accéder à une route protégée
+  if (!session) {
+    console.log('Session non trouvée, redirection vers /Login');
+    const redirectUrl = new URL('/Login', req.url);
+    return NextResponse.redirect(redirectUrl);
   }
 
   return res;
@@ -50,9 +40,13 @@ export async function middleware(req) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/Login',
-    '/Login/update-password',
-    '/Login/ResetPassword'
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
   ],
 }; 

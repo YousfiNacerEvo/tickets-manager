@@ -1,27 +1,14 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
 
-function ResetPasswordForm() {
+export default function ResetPassword() {
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
-
-  useEffect(() => {
-    // Vérifier si nous avons des paramètres d'erreur dans l'URL
-    const errorParam = searchParams.get('error');
-    const errorDescription = searchParams.get('error_description');
-    
-    if (errorParam) {
-      setError(errorDescription || 'Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,31 +17,25 @@ function ResetPasswordForm() {
     setError('');
 
     try {
-      // Obtenir l'URL du site
       const siteUrl = window.location.origin;
-      console.log('URL du site:', siteUrl);
+      console.log('Site URL:', siteUrl);
       
-      // Configurer l'URL de redirection
       const redirectTo = `${siteUrl}/Login/update-password`;
-      console.log('URL de redirection:', redirectTo);
+      console.log('Redirect URL:', redirectTo);
 
-      // D'abord, envoyer un email de réinitialisation
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectTo,
-        options: {
-          shouldCreateUser: false
-        }
+        shouldCreateUser: false
       });
 
       if (resetError) {
-        console.error('Erreur Supabase:', resetError);
         throw resetError;
       }
 
-      setMessage('Un email de réinitialisation a été envoyé à votre adresse email. Veuillez cliquer sur le lien dans l\'email pour continuer.');
+      setMessage('Un email de réinitialisation a été envoyé à votre adresse email.');
     } catch (error) {
-      console.error('Erreur complète:', error);
-      setError(error.message || 'Une erreur est survenue lors de l\'envoi de l\'email de réinitialisation.');
+      console.error('Erreur lors de l\'envoi de l\'email:', error);
+      setError(error.message || 'Une erreur est survenue lors de l\'envoi de l\'email.');
     } finally {
       setIsLoading(false);
     }
@@ -72,20 +53,18 @@ function ResetPasswordForm() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">Adresse email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Adresse email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+          <div>
+            <label htmlFor="email" className="sr-only">Adresse email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              placeholder="Adresse email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
 
           {message && (
@@ -118,25 +97,16 @@ function ResetPasswordForm() {
             </button>
           </div>
 
-          <div className="text-sm text-center">
-            <Link href="/Login" className="font-medium text-indigo-600 hover:text-indigo-500">
+          <div className="text-center">
+            <Link 
+              href="/Login"
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
               Retour à la connexion
             </Link>
           </div>
         </form>
       </div>
     </div>
-  );
-}
-
-export default function ResetPassword() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    }>
-      <ResetPasswordForm />
-    </Suspense>
   );
 } 

@@ -14,6 +14,48 @@ function UpdatePasswordFormContent() {
   const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
 
+  useEffect(() => {
+    const initializeReset = async () => {
+      try {
+        console.log('=== DÉBUT DE L\'INITIALISATION ===');
+        console.log('URL complète:', window.location.href);
+        console.log('Search params:', Object.fromEntries(searchParams.entries()));
+
+        const code = searchParams.get('code');
+        console.log('Code de réinitialisation:', code);
+
+        if (!code) {
+          console.log('❌ ERREUR: Pas de code dans l\'URL');
+          setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
+          return;
+        }
+
+        try {
+          console.log('Tentative de vérification du code...');
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            type: 'recovery',
+            token: code
+          });
+
+          if (verifyError) {
+            console.error('❌ ERREUR lors de la vérification:', verifyError);
+            throw verifyError;
+          }
+
+          console.log('✅ Code vérifié avec succès');
+        } catch (error) {
+          console.error('❌ ERREUR lors de la vérification:', error);
+          setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+        }
+      } catch (error) {
+        console.error('❌ ERREUR lors de l\'initialisation:', error);
+        setError('Une erreur est survenue. Veuillez demander un nouveau lien.');
+      }
+    };
+
+    initializeReset();
+  }, [searchParams, supabase.auth]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -26,27 +68,18 @@ function UpdatePasswordFormContent() {
       return;
     }
 
-    const code = searchParams.get('code');
-    console.log('Code de réinitialisation:', code);
-
-    if (!code) {
-      setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      console.log('Tentative de réinitialisation du mot de passe...');
-      const { error: resetError } = await supabase.auth.updateUser({
+      console.log('Tentative de mise à jour du mot de passe...');
+      const { error: updateError } = await supabase.auth.updateUser({
         password: password
       });
 
-      if (resetError) {
-        console.error('❌ ERREUR lors de la réinitialisation:', resetError);
-        throw resetError;
+      if (updateError) {
+        console.error('❌ ERREUR lors de la mise à jour:', updateError);
+        throw updateError;
       }
 
-      console.log('✅ Mot de passe réinitialisé avec succès');
+      console.log('✅ Mot de passe mis à jour avec succès');
       setMessage('Votre mot de passe a été réinitialisé avec succès.');
       setTimeout(() => {
         router.push('/Login');
