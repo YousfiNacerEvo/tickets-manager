@@ -6,34 +6,35 @@ import StepTitle from './components/StepTitle';
 import StepTicketInfo from './components/StepTicketInfo';
 import StepClientInfo from './components/StepClientInfo';
 import StepAttachment from './components/StepAttachment';
-import { getTicketById } from '@/services/ticketservice';
-import { sendTicketToBackend } from '@/services/ticketservice';
+import { getTicketById, sendTicketToBackend, getClientToken, uploadTicketFiles } from '@/services/ticketservice';
 import { sendTicketNotificationEmail } from '@/services/emailService';
 
+const API_URL_LOCAL = "http://localhost:10000";
+
 const steps = [
-  { label: "Informations du ticket", icon: (
+  { label: "ticket information", icon: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
   ) },
   { label: "Client", icon: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
   ) },
-  { label: "Pièce jointe", icon: (
+  { label: "attachment", icon: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 10-5.656-5.656l-6.586 6.586a6 6 0 108.486 8.486l6.586-6.586" /></svg>
   ) },
 ];
 
 const stepTitles = [
   {
-    title: "Informations du ticket",
-    desc: "Remplissez les informations principales du ticket."
+    title: "ticket information",
+    desc: "Fill in the main ticket information."
   },
   {
-    title: "Informations du client",
-    desc: "Renseignez les coordonnées du client lié à ce ticket."
+    title: "client information",
+    desc: "fill in the client information."
   },
   {
-    title: "Ajouter une pièce jointe",
-    desc: "Ajoutez une image ou un document lié au ticket (optionnel)."
+    title: "add a file",
+    desc: "add a file to the ticket (optional)."
   }
 ];
 
@@ -105,13 +106,42 @@ export default function CreateTicket() {
         return;
       }
 
-      const backendResponse = await sendTicketToBackend(ticket);
+      const token = getClientToken();
+      console.log('TOKEN AVANT CREATION:', token);
+      console.log('Fichiers à uploader:', ticket.files);
+
+      // D'abord uploader les fichiers s'il y en a
+      let uploadedFiles = [];
+      if (ticket.files && ticket.files.length > 0) {
+        try {
+          console.log('Début de l\'upload des fichiers...');
+          uploadedFiles = await uploadTicketFiles(ticket.files, token);
+          console.log('Fichiers uploadés avec succès:', uploadedFiles);
+        } catch (uploadError) {
+          console.error('Erreur détaillée lors de l\'upload des fichiers:', uploadError);
+          setMessage({ type: 'error', text: 'Erreur lors de l\'upload des fichiers. Le ticket sera créé sans les fichiers.' });
+        }
+      }
+
+      // Créer le ticket avec les URLs des fichiers uploadés
+      const ticketData = {
+        ...ticket,
+        files: uploadedFiles // Utiliser les fichiers uploadés au lieu des objets File
+      };
+
+      const backendResponse = await sendTicketToBackend(ticketData, token);
       const ticketId = Array.isArray(backendResponse) ? backendResponse[0]?.id : backendResponse?.id;
       if (!ticketId) throw new Error("Impossible de récupérer l'identifiant du ticket créé");
       
       // Envoyer l'email de notification
-      console.log("cikte",ticket)
-      await sendTicketNotificationEmail(ticketId, ticket.userEmail);
+      if (ticket.clientEmail) {
+        try {
+          await sendTicketNotificationEmail(ticketId, ticket.clientEmail, token);
+        } catch (emailError) {
+          console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+          // Continue with success message even if email fails
+        }
+      }
       
       setMessage({ type: 'success', text: 'Ticket créé avec succès !' });
       setTimeout(() => {

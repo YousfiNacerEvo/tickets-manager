@@ -17,11 +17,22 @@ export default function ResetPassword() {
     setError('');
 
     try {
-      const siteUrl = window.location.origin;
+      const siteUrl = 'https://tickets-manager-kappa.vercel.app';
+      console.log('=== DÉBUT DE LA RÉINITIALISATION ===');
       console.log('Site URL:', siteUrl);
+      console.log('Email:', email);
       
-      const redirectTo = `${siteUrl}/Login/update-password`;
-      console.log('Redirect URL:', redirectTo);
+      // Encoder l'email pour l'URL
+      const encodedEmail = encodeURIComponent(email);
+      const redirectTo = `${siteUrl}/Login/update-password?email=${encodedEmail}`;
+      console.log('Redirect URL complète:', redirectTo);
+
+      console.log('Tentative d\'envoi de l\'email de réinitialisation...');
+      console.log('Paramètres envoyés à resetPasswordForEmail:', {
+        email: email,
+        redirectTo: redirectTo,
+        shouldCreateUser: false
+      });
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectTo,
@@ -29,12 +40,24 @@ export default function ResetPassword() {
       });
 
       if (resetError) {
+        console.error('❌ ERREUR lors de l\'envoi:', resetError);
+        console.error('Détails de l\'erreur:', {
+          message: resetError.message,
+          status: resetError.status,
+          name: resetError.name
+        });
         throw resetError;
       }
 
+      console.log('✅ Email envoyé avec succès');
       setMessage('Un email de réinitialisation a été envoyé à votre adresse email.');
     } catch (error) {
-      console.error('Erreur lors de l\'envoi de l\'email:', error);
+      console.error('❌ ERREUR complète:', error);
+      console.error('Détails de l\'erreur:', {
+        message: error.message,
+        status: error.status,
+        name: error.name
+      });
       setError(error.message || 'Une erreur est survenue lors de l\'envoi de l\'email.');
     } finally {
       setIsLoading(false);

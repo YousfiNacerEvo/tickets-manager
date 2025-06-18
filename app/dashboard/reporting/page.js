@@ -133,7 +133,7 @@ export default function ReportingPage() {
     labels: reportData?.stats.timeSeries.map(item => item.label) || [],
     datasets: [
       {
-        label: 'Nombre de tickets',
+        label: 'total tickets',
         data: reportData?.stats.timeSeries.map(item => item.count) || [],
         backgroundColor: 'rgba(59, 130, 246, 0.5)',
         borderColor: 'rgb(59, 130, 246)',
@@ -150,7 +150,7 @@ export default function ReportingPage() {
       },
       title: {
         display: true,
-        text: 'Évolution des tickets',
+        text: 'Ticket evolution',
         color: '#1f2937'
       }
     },
@@ -180,12 +180,12 @@ export default function ReportingPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Rapports</h1>
         <div className="space-x-2">
-          <Button onClick={exportToExcel} variant="outline" className="text-gray-800 hover:bg-gray-100">
+          <Button onClick={exportToExcel} variant="outline" className="text-white hover:bg-gray-100">
             <FileDown className="mr-2 h-4 w-4" />
             Excel
           </Button>
-          <Button onClick={exportToPDF} variant="outline" className="text-gray-800 hover:bg-gray-100">
-            <Download className="mr-2 h-4 w-4" />
+          <Button onClick={exportToPDF} variant="outline" className="text-white hover:bg-gray-100">
+            <Download className="mr-2 h-4 w-4 text-white" />
             PDF
           </Button>
         </div>
@@ -194,17 +194,17 @@ export default function ReportingPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-gray-800">Période</CardTitle>
+            <CardTitle className="text-gray-800">Period</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-2">
+            <div className="grid gap-2 text-white">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left font-normal text-gray-800"
+                    className="w-full justify-start text-left font-normal text-white"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4 text-white" />
                     {date.from ? (
                       date.to ? (
                         <>
@@ -229,7 +229,7 @@ export default function ReportingPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-gray-800">Filtres</CardTitle>
           </CardHeader>
@@ -264,31 +264,31 @@ export default function ReportingPage() {
              
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-gray-800">Résumé</CardTitle>
+            <CardTitle className="text-gray-800">Summary</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-gray-800">Chargement...</div>
+              <div className="text-gray-800">Loading...</div>
             ) : reportData ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
                   <div className="p-4 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-gray-600">Total des tickets</div>
+                    <div className="text-sm text-gray-600">Total tickets</div>
                     <div className="text-2xl font-bold text-gray-800">{reportData.stats.total}</div>
                   </div>
                   <div className="p-4 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-gray-600">Tickets résolus</div>
+                    <div className="text-sm text-gray-600">Tickets closed</div>
                     <div className="text-2xl font-bold text-gray-800">{reportData.stats.resolved}</div>
                   </div>
                   <div className="p-4 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-gray-600">Temps moyen de résolution</div>
+                    <div className="text-sm text-gray-600">Average resolution time</div>
                     <div className="text-2xl font-bold text-gray-800">
                       {reportData?.stats?.averageResolutionTime && reportData.stats.resolved > 0
-                        ? `${Math.round(reportData.stats.averageResolutionTime)} heures`
+                        ? `${Math.round(reportData.stats.averageResolutionTime)} hours`
                         : '0 heures'}
                     </div>
                   </div>
@@ -306,7 +306,7 @@ export default function ReportingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-800">Liste des tickets</CardTitle>
+          <CardTitle className="text-gray-800">tickets liste</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (

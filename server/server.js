@@ -100,6 +100,7 @@ app.post('/login', async (req, res) => {
 
 app.post('/tickets', authenticateToken, async (req, res) => {
   const { title, description, priority, type, status, client, station, clientPhone, clientEmail, files, waitingClient, resolutionComment } = req.body;
+  console.log("le backend host marche")
   try {
     const { data, error } = await supabase
       .from('tickets')
@@ -168,10 +169,14 @@ app.get('/tickets/:id', async (req, res) => {
 
 app.put('/tickets/:id', async (req, res) => {
   const { id } = req.params;
-  const { title, description, priority, type, status, client, station, clientPhone, clientEmail, files, waitingClient, resolutionComment, closed_at } = req.body;
-  const { data, error } = await supabase
-    .from('tickets')
-    .update({
+  const { title, description, priority, type, status, client, station, clientPhone, clientEmail, files, waitingClient, resolutionComment } = req.body;
+  
+  try {
+    // Obtenir l'heure actuelle du serveur en UTC
+    const serverTime = new Date();
+    console.log('Server time:', serverTime.toISOString());
+
+    const updateData = {
       title,
       description,
       priority,
@@ -184,14 +189,27 @@ app.put('/tickets/:id', async (req, res) => {
       files: files ? JSON.stringify(files) : null,
       waiting_client: waitingClient,
       resolution_comment: resolutionComment,
-      closed_at
-    })
-    .eq('id', id)
-    .select();
-  if (error) {
-    return res.status(400).json({ error: error.message });
+      // Si le ticket est fermé, utiliser l'heure du serveur
+      closed_at: status === 'closed' ? serverTime.toISOString() : null
+    };
+
+    console.log('Updating ticket with data:', updateData);
+
+    const { data, error } = await supabase
+      .from('tickets')
+      .update(updateData)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(400).json({ error: error.message });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du ticket:', error);
+    res.status(500).json({ error: 'Erreur serveur lors de la mise à jour du ticket' });
   }
-  res.json(data);
 });
 
 // Route pour l'upload de fichiers

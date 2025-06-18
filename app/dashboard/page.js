@@ -14,7 +14,8 @@ import {
   getTicketsByStation,
   getIncidentsByPriority,
   getNocOsticketCategories,
-  getIncidentsByStatus
+  getIncidentsByStatus,
+  getClientToken
 } from '@/services/ticketservice';
 
 // Enregistrer les composants Chart.js nécessaires
@@ -40,16 +41,21 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = getClientToken();
+        if (!token) {
+          throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+        }
+
         const [
           ticketsByStation,
           incidentsByPriority,
           nocOsticketCategories,
           incidentsByStatus
         ] = await Promise.all([
-          getTicketsByStation(),
-          getIncidentsByPriority(),
-          getNocOsticketCategories(),
-          getIncidentsByStatus()
+          getTicketsByStation(token),
+          getIncidentsByPriority(token),
+          getNocOsticketCategories(token),
+          getIncidentsByStatus(token)
         ]);
 
         setStats({

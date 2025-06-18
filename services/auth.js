@@ -110,3 +110,27 @@ export const updatePassword = async (password, token) => {
     throw new Error(error.message || "Une erreur est survenue lors de la mise à jour du mot de passe");
   }
 };
+
+export async function updateTicket(ticketId, ticketData, token) {
+  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  try {
+    const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(ticketData),
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Réponse backend updateTicket:', errorData);
+      throw new Error(errorData.error || 'Erreur lors de la mise à jour du ticket.');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur:', error);
+    throw error;
+  }
+}

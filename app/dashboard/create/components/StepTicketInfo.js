@@ -34,20 +34,20 @@ export default function StepTicketInfo({ ticket, handleChange, handleNext }) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Priorité</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
           <select
             name="priority"
             value={ticket.priority}
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
           >
-            <option value="low">Basse</option>
-            <option value="medium">Moyenne</option>
-            <option value="high">Haute</option>
+            <option value="low">low</option>
+            <option value="medium">medium</option>
+            <option value="high">high</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type de ticket</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Type of the ticket</label>
           <select
             name="type"
             value={ticket.type}

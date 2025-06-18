@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { getAllTickets } from '@/services/ticketservice';
+import { getAllTickets, getClientToken } from '@/services/ticketservice';
 import TicketSearchBar from './TicketSearchBar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -29,7 +29,9 @@ export default function TicketsListPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await getAllTickets();
+        const token = getClientToken();
+        console.log('TOKEN CLIENT TicketsListPage:', token);
+        const data = await getAllTickets(token);
         console.log('Tickets data:', data);
         const sortedTickets = data.sort((a, b) => {
           const dateA = new Date(a.created_at);
@@ -38,6 +40,7 @@ export default function TicketsListPage() {
         });
         setTickets(sortedTickets);
       } catch (err) {
+        console.error('Erreur TicketsListPage:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -87,9 +90,15 @@ export default function TicketsListPage() {
   const formatDate = (dateString) => {
     if (!dateString) return '--';
     try {
+      // Convertir la date UTC en objet Date
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return '--';
-      return date.toLocaleDateString('fr-FR', {
+      
+      // Soustraire une heure pour corriger le décalage UTC+1
+      date.setHours(date.getHours());
+      
+      // Formater la date en heure locale
+      return date.toLocaleString('fr-FR', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -158,7 +167,7 @@ export default function TicketsListPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
-                {sortOrder === 'desc' ? 'Plus récent en premier' : 'Plus ancien en premier'}
+                {sortOrder === 'desc' ? 'Newest first' : 'oldest first'}
               </button>
               <h1 className="text-2xl font-bold text-gray-800">Ticket list</h1>
             </div>
@@ -179,16 +188,16 @@ export default function TicketsListPage() {
                   <thead className="bg-gray-50/80">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priorité</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waiting Client</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de création</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de fermeture</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créé par</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of creation</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of closur</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created by</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -202,7 +211,7 @@ export default function TicketsListPage() {
                           <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
                             <div className="flex items-center gap-2">
                               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                              <span className="text-sm text-gray-600">Chargement...</span>
+                              <span className="text-sm text-gray-600">Loading...</span>
                             </div>
                           </div>
                         )}
@@ -227,7 +236,7 @@ export default function TicketsListPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.type}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.waiting_client ? 'Oui' : 'Non'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.waiting_client ? 'Yes' : 'No'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(ticket.created_at)}
                         </td>

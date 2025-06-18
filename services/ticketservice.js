@@ -1,13 +1,34 @@
-const API_URL = "https://gestion-ticket-back-3.onrender.com"
+// services/ticketservice.js
+// Toutes les fonctions attendent le token en argument (récupéré côté serveur dans la page avec cookies() ou côté client avec localStorage)
+
+const API_URL = "https://gestion-ticket-back-78nj.onrender.com"
 const API_URL_LOCAL = "http://localhost:10000";
+
+// Utilitaire pour récupérer le token côté client
+export function getClientToken() {
+  if (typeof document !== 'undefined') {
+    // D'abord vérifier dans les cookies
+    const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]*)/);
+    if (cookieMatch) {
+      return decodeURIComponent(cookieMatch[1]);
+    }
+    
+    // Ensuite vérifier dans le localStorage
+    const localStorageToken = localStorage.getItem('token');
+    if (localStorageToken) {
+      return localStorageToken;
+    }
+  }
+  return null;
+}
+
 /**
  * Récupère toutes les informations d'un ticket par son ID
  * @param {string|number} ticketId
  * @param {string} token
  * @returns {Promise<Object>} Les informations du ticket
  */
-export async function getTicketById(ticketId) {
-  const token = getToken();
+export async function getTicketById(ticketId, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
 
   try {
@@ -30,7 +51,7 @@ export async function getTicketById(ticketId) {
     if (data && data.length > 0 && data[0].files) {
       data[0].files = data[0].files.map(file => ({
         ...file,
-        url: `${API_URL}${file.url}` // Ajouter l'URL de base
+        url: `${API_URL}${file.url}` // Utiliser API_URL au lieu de API_URL
       }));
     }
 
@@ -42,30 +63,10 @@ export async function getTicketById(ticketId) {
   }
 }
 
-// Utilitaire pour récupérer le token côté serveur ou client
-function getToken() {
-  if (typeof window !== 'undefined') {
-    // Côté client
-    return localStorage.getItem('token');
-  } else {
-    // Côté serveur (Next.js 13+)
-    const { cookies } = require('next/headers');
-    const cookieStore = cookies();
-    return cookieStore.get('token')?.value;
-  }
-}
-
-/**
- * Récupère tous les tickets depuis le backend
- * @returns {Promise<Array>} Liste des tickets
- */
-export async function getAllTickets() {
-  const token = getToken();
+export async function getAllTickets(token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
-  try {//https://gestion-ticket-back-3.onrender.com/tickets
+  try {
     const response = await fetch(`${API_URL}/tickets`, {
-      method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -74,21 +75,13 @@ export async function getAllTickets() {
     if (!response.ok) throw new Error('Erreur lors de la récupération des tickets.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur backend:', error);
+    console.error('Erreur:', error);
     throw error;
   }
 }
 
-/**
- * Met à jour un ticket existant
- * @param {string|number} ticketId - ID du ticket à mettre à jour
- * @param {Object} ticketData - Nouvelles données du ticket
- * @returns {Promise<Object>} Le ticket mis à jour
- */
-export async function updateTicket(ticketId, ticketData) {
-  const token = getToken();
+export async function updateTicket(ticketId, ticketData, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
   try {
     const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
       method: 'PUT',
@@ -99,155 +92,114 @@ export async function updateTicket(ticketId, ticketData) {
       body: JSON.stringify(ticketData),
       cache: 'no-store',
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Erreur lors de la mise à jour du ticket.');
-    }
-
-    const data = await response.json();
-    if (!data || data.length === 0) {
-      throw new Error('Aucune donnée reçue après la mise à jour.');
-    }
-
-    return data;
+    if (!response.ok) throw new Error('Erreur lors de la mise à jour du ticket.');
+    return await response.json();
   } catch (error) {
-    console.error('Erreur backend:', error);
+    console.error('Erreur:', error);
     throw error;
   }
 }
 
-/**
- * Upload une image pour un ticket
- * @param {File} imageFile - Le fichier image à uploader
- * @returns {Promise<string>} L'URL de l'image uploadée
- */
-export async function uploadTicketImage(imageFile) {
-  const token = getToken();
+export async function uploadTicketImage(imageFile, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
   const formData = new FormData();
   formData.append('image', imageFile);
-
   try {
-    const response = await fetch(`${API_URL}/tickets/upload`, {
+    const response = await fetch(`${API_URL}/tickets/upload-image`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
       body: formData,
+      cache: 'no-store',
     });
-
     if (!response.ok) throw new Error('Erreur lors de l\'upload de l\'image.');
-
-    const data = await response.json();
-    return `${API_URL}${data.imageUrl}`;
+    return await response.json();
   } catch (error) {
-    console.error('Erreur backend:', error);
+    console.error('Erreur:', error);
     throw error;
   }
 }
 
-/**
- * Upload des fichiers pour un ticket
- * @param {File[]} files - Les fichiers à uploader
- * @returns {Promise<string[]>} Les URLs des fichiers uploadés
- */
-export async function uploadTicketFiles(files) {
-  const token = getToken();
+export async function uploadTicketFiles(files, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
+  const formData = new FormData();
+  files.forEach(file => formData.append('files', file));
+  
   try {
-    const formData = new FormData();
+    console.log('Tentative d\'upload vers:', `${API_URL}/tickets/upload`);
+    console.log('Token utilisé:', token);
     
-    // Vérifier si files est un tableau ou un FileList
-    const filesArray = Array.isArray(files) ? files : Array.from(files);
-    
-    // Ajouter chaque fichier au FormData
-    filesArray.forEach((file, index) => {
-      formData.append('files', file);
-    });
-
-    console.log('Envoi des fichiers:', filesArray);
-
     const response = await fetch(`${API_URL}/tickets/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
       body: formData,
+      cache: 'no-store',
     });
+
+    console.log('Status de la réponse:', response.status);
+    console.log('Headers de la réponse:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Erreur lors de l'upload des fichiers.");
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        console.error('Le serveur a renvoyé du HTML au lieu du JSON attendu');
+        throw new Error('Le serveur n\'est pas accessible. Veuillez vérifier que le serveur backend est en cours d\'exécution.');
+      }
+      
+      let errorMessage;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || 'Erreur lors de l\'upload des fichiers.';
+      } catch (e) {
+        errorMessage = `Erreur serveur (${response.status}): ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
-    const data = await response.json();
-    console.log('Réponse du serveur:', data);
-    return data.urls;
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('Type de contenu inattendu:', contentType);
+      throw new Error('Réponse invalide du serveur');
+    }
+
+    const result = await response.json();
+    console.log('Réponse du serveur:', result);
+    
+    // Ajouter l'URL de base aux fichiers retournés
+    return result.urls.map(url => ({
+      url: `${API_URL}${url}`
+    }));
   } catch (error) {
-    console.error('Erreur lors de l\'upload des fichiers:', error);
+    console.error('Erreur détaillée:', error);
     throw error;
   }
 }
 
-// Fonction pour envoyer le ticket au backend
-export async function sendTicketToBackend(ticketData) {
-  const token = getToken();
+export async function sendTicketToBackend(ticketData, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
   try {
-    // Upload des fichiers si présents
-    let uploadedFiles = [];
-    if (ticketData.files && ticketData.files.length > 0) {
-      uploadedFiles = await uploadTicketFiles(ticketData.files);
-    }
-
-    // On crée une copie des données du ticket sans les fichiers
-    const { files, ...ticketDataWithoutFiles } = ticketData;
-    
-    // On ajoute les URLs des fichiers si elles existent
-    const finalTicketData = {
-      ...ticketDataWithoutFiles,
-      files: uploadedFiles.map(url => ({
-        url,
-        name: url.split('/').pop(),
-        type: url.split('.').pop()
-      })),
-      client: ticketData.client || '',
-      station: ticketData.station || '',
-      client_phone: ticketData.clientPhone || '',
-      client_email: ticketData.clientEmail || '',
-    };
-
-    console.log('Données envoyées au backend:', finalTicketData);
-
     const response = await fetch(`${API_URL}/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify(finalTicketData),
+      body: JSON.stringify(ticketData),
       cache: 'no-store',
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Erreur lors de l'envoi du ticket.");
-    }
+    if (!response.ok) throw new Error('Erreur lors de la création du ticket.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur backend:', error);
+    console.error('Erreur:', error);
     throw error;
   }
 }
 
-export async function getTicketsByStation() {
-  const token = getToken();
+export async function getTicketsByStation(token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
   try {
     const response = await fetch(`${API_URL}/stats/tickets-by-station`, {
       headers: {
@@ -255,7 +207,6 @@ export async function getTicketsByStation() {
       },
       cache: 'no-store',
     });
-    
     if (!response.ok) throw new Error('Erreur lors de la récupération des statistiques par station.');
     return await response.json();
   } catch (error) {
@@ -264,10 +215,8 @@ export async function getTicketsByStation() {
   }
 }
 
-export async function getIncidentsByPriority() {
-  const token = getToken();
+export async function getIncidentsByPriority(token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
   try {
     const response = await fetch(`${API_URL}/stats/incidents-by-priority`, {
       headers: {
@@ -275,7 +224,6 @@ export async function getIncidentsByPriority() {
       },
       cache: 'no-store',
     });
-    
     if (!response.ok) throw new Error('Erreur lors de la récupération des incidents par priorité.');
     return await response.json();
   } catch (error) {
@@ -284,10 +232,8 @@ export async function getIncidentsByPriority() {
   }
 }
 
-export async function getNocOsticketCategories() {
-  const token = getToken();
+export async function getNocOsticketCategories(token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
   try {
     const response = await fetch(`${API_URL}/stats/noc-osticket-categories`, {
       headers: {
@@ -295,7 +241,6 @@ export async function getNocOsticketCategories() {
       },
       cache: 'no-store',
     });
-    
     if (!response.ok) throw new Error('Erreur lors de la récupération des catégories NOC Osticket.');
     return await response.json();
   } catch (error) {
@@ -304,10 +249,8 @@ export async function getNocOsticketCategories() {
   }
 }
 
-export async function getIncidentsByStatus() {
-  const token = getToken();
+export async function getIncidentsByStatus(token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
   try {
     const response = await fetch(`${API_URL}/stats/incidents-by-status`, {
       headers: {
@@ -315,7 +258,6 @@ export async function getIncidentsByStatus() {
       },
       cache: 'no-store',
     });
-    
     if (!response.ok) throw new Error('Erreur lors de la récupération des incidents par statut.');
     return await response.json();
   } catch (error) {
@@ -324,15 +266,8 @@ export async function getIncidentsByStatus() {
   }
 }
 
-/**
- * Récupère les commentaires d'un ticket
- * @param {string|number} ticketId - ID du ticket
- * @returns {Promise<Array>} Liste des commentaires
- */
-export async function getTicketComments(ticketId) {
-  const token = getToken();
+export async function getTicketComments(ticketId, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
   try {
     const response = await fetch(`${API_URL}/tickets/${ticketId}/comments`, {
       method: 'GET',
@@ -341,7 +276,6 @@ export async function getTicketComments(ticketId) {
       },
       cache: 'no-store',
     });
-
     if (!response.ok) throw new Error('Erreur lors de la récupération des commentaires.');
     return await response.json();
   } catch (error) {
@@ -350,16 +284,8 @@ export async function getTicketComments(ticketId) {
   }
 }
 
-/**
- * Ajoute un commentaire à un ticket
- * @param {string|number} ticketId - ID du ticket
- * @param {string} content - Contenu du commentaire
- * @returns {Promise<Object>} Le commentaire ajouté
- */
-export async function addTicketComment(ticketId, content) {
-  const token = getToken();
+export async function addTicketComment(ticketId, content, token) {
   if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
-
   try {
     const response = await fetch(`${API_URL}/tickets/${ticketId}/comments`, {
       method: 'POST',
@@ -370,7 +296,6 @@ export async function addTicketComment(ticketId, content) {
       body: JSON.stringify({ content }),
       cache: 'no-store',
     });
-
     if (!response.ok) throw new Error('Erreur lors de l\'ajout du commentaire.');
     return await response.json();
   } catch (error) {

@@ -4,43 +4,26 @@ import TicketDetails from './TicketDetails';
 import Link from 'next/link';
 
 export default async function TicketPage({ params }) {
-  // 1. Récupérer le token dans les cookies côté serveur
-  const cookieStore = cookies();
-  const token = cookieStore.get('token')?.value;
+  // Récupérer le token dans les cookies côté serveur
+  const token = cookies().get('token')?.value;
+  console.log('TOKEN SERVEUR:', token); // <-- Ce log s'affichera dans le terminal
 
-  // 2. Vérifier la présence de l'id
-  const { id } = params;
-  if (!id) {
+  if (!token) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-5xl mx-auto">
           <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
             <h1 className="text-2xl font-bold text-red-600">Erreur</h1>
-            <p className="mt-2 text-gray-600">Aucun identifiant de ticket fourni.</p>
+            <p className="mt-2 text-gray-600">Aucun token d'authentification trouvé. Veuillez vous reconnecter.</p>
+            <Link href="/Login" className="text-blue-600 hover:underline mt-4 inline-block">Se reconnecter</Link>
           </div>
         </div>
       </div>
     );
   }
 
-  // 3. Appeler le service avec le token
   try {
-    const ticket = await getTicketById(id, token);
-    console.log('Tokenkqdjfqmsd:', ticket); // Debug: Afficher le token
-
-    if (!ticket) {
-      return (
-        <div className="min-h-screen bg-gray-50 p-8">
-          <div className="max-w-5xl mx-auto">
-            <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
-              <h1 className="text-2xl font-bold text-red-600">Ticket non trouvé</h1>
-              <p className="mt-2 text-gray-600">Le ticket que vous recherchez n'existe pas ou a été supprimé.</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
+    const ticket = await getTicketById(params.id, token);
     return <TicketDetails ticket={ticket} />;
   } catch (error) {
     return (
@@ -49,6 +32,7 @@ export default async function TicketPage({ params }) {
           <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
             <h1 className="text-2xl font-bold text-red-600">Erreur</h1>
             <p className="mt-2 text-gray-600">{error.message}</p>
+            <Link href="/dashboard/tickets" className="text-blue-600 hover:underline mt-4 inline-block">Retour à la liste des tickets</Link>
           </div>
         </div>
       </div>

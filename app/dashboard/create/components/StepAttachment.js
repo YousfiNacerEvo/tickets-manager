@@ -7,7 +7,7 @@ export default function StepAttachment({ fileList, fileInputRef, handleFileChang
       // Vérifier la taille totale des fichiers (max 20MB)
       const totalSize = files.reduce((acc, file) => acc + file.size, 0);
       if (totalSize > 20 * 1024 * 1024) {
-        alert('La taille totale des fichiers ne doit pas dépasser 20MB');
+        alert('Total file size should not exceed 20MB');
         return;
       }
       
@@ -22,7 +22,7 @@ export default function StepAttachment({ fileList, fileInputRef, handleFileChang
       // Vérifier la taille totale des fichiers (max 20MB)
       const totalSize = files.reduce((acc, file) => acc + file.size, 0);
       if (totalSize > 20 * 1024 * 1024) {
-        alert('La taille totale des fichiers ne doit pas dépasser 20MB');
+        alert('Total file size should not exceed 20MB');
         return;
       }
       
@@ -57,7 +57,7 @@ export default function StepAttachment({ fileList, fileInputRef, handleFileChang
           <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
-          Fichiers (optionnel)
+          File (optionnel)
         </label>
         <div
           className="w-full min-h-40 border-2 border-dashed border-pink-300 rounded-lg flex flex-col items-center justify-center cursor-pointer bg-pink-50 hover:bg-pink-100 relative transition p-4"
@@ -80,8 +80,8 @@ export default function StepAttachment({ fileList, fileInputRef, handleFileChang
               <svg className="w-12 h-12 text-pink-300 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              <span className="text-pink-400">Glissez-déposez des fichiers ou cliquez pour sélectionner</span>
-              <span className="text-xs text-gray-500 mt-2">Taille maximale totale : 20MB</span>
+              <span className="text-pink-400">Drag and drop files or click to select</span>
+              <span className="text-xs text-gray-500 mt-2">Maximum total size: 20MB</span>
             </>
           )}
           <input
@@ -118,7 +118,7 @@ export default function StepAttachment({ fileList, fileInputRef, handleFileChang
               Création en cours...
             </>
           ) : (
-            'Créer le ticket'
+            'Create ticket'
           )}
         </button>
       </div>

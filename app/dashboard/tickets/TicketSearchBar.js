@@ -29,7 +29,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
           onChange={e => setFilters(f => ({ ...f, client: e.target.value }))}
           className="px-3 py-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-400"
         >
-          <option value="">Tous les clients</option>
+          <option value="">All clients</option>
           {clients.map((client) => (
             <option key={client} value={client}>
               {client}
@@ -44,7 +44,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
           onChange={e => setFilters(f => ({ ...f, station: e.target.value }))}
           className="px-3 py-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-400"
         >
-          <option value="">Toutes les stations</option>
+          <option value="">all station</option>
           {stations.map((station) => (
             <option key={station} value={station}>
               {station}
@@ -86,18 +86,18 @@ export default function TicketSearchBar({ filters, setFilters }) {
           className="px-3 py-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">All</option>
-          <option value="requeste">Requeste</option>
+          <option value="request">Request</option>
           <option value="incident">Incident</option>
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">Créé par (email)</label>
+        <label className="block text-xs font-medium text-gray-700 mb-1">created by (email)</label>
         <input
           type="text"
           value={filters.user_email || ''}
           onChange={e => setFilters(f => ({ ...f, user_email: e.target.value }))}
           className="px-3 py-2 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-400"
-          placeholder="Email du créateur"
+          placeholder="Email of the creator"
         />
       </div>
     </div>

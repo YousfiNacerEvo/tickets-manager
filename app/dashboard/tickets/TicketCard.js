@@ -22,7 +22,17 @@ export default function TicketCard({ ticket }) {
       )}
       <div className="flex flex-wrap justify-between items-center mb-2">
         <div className="font-bold text-lg text-blue-700">#{ticket.id}</div>
-        <div className="text-xs text-gray-500">Créé le {ticket.updated_at ? new Date(ticket.updated_at).toLocaleString() : '-'}</div>
+        <div className="text-xs text-gray-500">Créé le {ticket.updated_at ? (() => {
+          const date = new Date(ticket.updated_at);
+          date.setHours(date.getHours() ); // Soustraire une heure pour corriger le décalage UTC+1
+          return date.toLocaleString('fr-FR', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        })() : '-'}</div>
       </div>
       <div className="font-semibold text-2xl mb-1 text-black">{ticket.title}</div>
       <div className="flex flex-wrap gap-2 mb-2">

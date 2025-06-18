@@ -10,49 +10,51 @@ function UpdatePasswordFormContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [isCodeVerified, setIsCodeVerified] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
     const initializeReset = async () => {
+      console.log('=== DÉBUT DE L\'INITIALISATION ===');
+      const code = searchParams.get('code');
+      
+      console.log('URL complète:', window.location.href);
+      console.log('Search params:', Object.fromEntries(searchParams.entries()));
+      console.log('Code de réinitialisation:', code);
+
+      if (!code) {
+        setError('Lien de réinitialisation invalide : code manquant');
+        return;
+      }
+
       try {
-        console.log('=== DÉBUT DE L\'INITIALISATION ===');
-        console.log('URL complète:', window.location.href);
-        console.log('Search params:', Object.fromEntries(searchParams.entries()));
+        console.log('Tentative d\'échange du code...');
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
-        const code = searchParams.get('code');
-        const email = searchParams.get('email');
-        console.log('Code de réinitialisation:', code);
-        console.log('Email:', email);
-
-        if (!code || !email) {
-          console.log('❌ ERREUR: Code ou email manquant dans l\'URL');
-          setError('Lien de réinitialisation invalide. Veuillez demander un nouveau lien.');
-          return;
+        if (exchangeError) {
+          console.error('Erreur lors de l\'échange:', exchangeError);
+          throw exchangeError;
         }
 
-        try {
-          console.log('Tentative de vérification du code...');
-          const { error: verifyError } = await supabase.auth.verifyOtp({
-            type: 'recovery',
-            token: code,
-            email: email
-          });
-
-          if (verifyError) {
-            console.error('❌ ERREUR lors de la vérification:', verifyError);
-            throw verifyError;
-          }
-
-          console.log('✅ Code vérifié avec succès');
-        } catch (error) {
-          console.error('❌ ERREUR lors de la vérification:', error);
-          setError('Le lien de réinitialisation a expiré. Veuillez demander un nouveau lien.');
+        if (!data.session) {
+          throw new Error('Session non créée après l\'échange du code');
         }
+
+        console.log('Code échangé avec succès, session créée');
+        setIsCodeVerified(true);
       } catch (error) {
-        console.error('❌ ERREUR lors de l\'initialisation:', error);
-        setError('Une erreur est survenue. Veuillez demander un nouveau lien.');
+        console.error('Erreur détaillée:', error);
+        
+        // Gestion spécifique des erreurs courantes
+        if (error.message?.includes('expired') || error.message?.includes('invalid')) {
+          setError('Le lien de réinitialisation a expiré ou est invalide. Veuillez demander un nouveau lien.');
+        } else if (error.message?.includes('AuthApiError')) {
+          setError('Erreur d\'authentification. Veuillez demander un nouveau lien de réinitialisation.');
+        } else {
+          setError('Une erreur est survenue lors de la vérification du code. Veuillez demander un nouveau lien.');
+        }
       }
     };
 
@@ -71,30 +73,36 @@ function UpdatePasswordFormContent() {
       return;
     }
 
+    if (!isCodeVerified) {
+      setError('Veuillez attendre la vérification du code de réinitialisation.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      console.log('Tentative de mise à jour du mot de passe...');
+      console.log('Tentative de mise à jour du mot de passe');
       const { error: updateError } = await supabase.auth.updateUser({
         password: password
       });
 
       if (updateError) {
-        console.error('❌ ERREUR lors de la mise à jour:', updateError);
+        console.error('Erreur lors de la mise à jour:', updateError);
         throw updateError;
       }
 
-      console.log('✅ Mot de passe mis à jour avec succès');
+      console.log('Mot de passe mis à jour avec succès');
       setMessage('Votre mot de passe a été réinitialisé avec succès.');
+      
+      // Déconnexion après la mise à jour réussie
+      await supabase.auth.signOut();
+      
       setTimeout(() => {
         router.push('/Login');
       }, 3000);
 
     } catch (error) {
-      console.error('❌ ERREUR complète:', error);
-      if (error.message.includes('expired') || error.message.includes('invalid')) {
-        setError('Votre lien a expiré ou est invalide. Veuillez demander un nouveau lien.');
-      } else {
-        setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
-      }
+      console.error('Erreur lors de la mise à jour:', error);
+      setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
     } finally {
       setIsLoading(false);
     }
@@ -124,6 +132,7 @@ function UpdatePasswordFormContent() {
                 placeholder="Nouveau mot de passe"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={!isCodeVerified}
               />
             </div>
             <div>
@@ -137,6 +146,7 @@ function UpdatePasswordFormContent() {
                 placeholder="Confirmer le mot de passe"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={!isCodeVerified}
               />
             </div>
           </div>
@@ -164,14 +174,14 @@ function UpdatePasswordFormContent() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={isLoading || !isCodeVerified}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400"
             >
               {isLoading ? 'Mise à jour en cours...' : 'Mettre à jour le mot de passe'}
             </button>
           </div>
 
-          {error && error.includes('expiré') && (
+          {error && (error.includes('expiré') || error.includes('invalide')) && (
             <div className="text-center">
               <Link 
                 href="/Login/ResetPassword"

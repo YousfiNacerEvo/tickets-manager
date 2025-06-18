@@ -36,7 +36,7 @@ export default function StepClientInfo({ ticket, handleChange, handleNext, handl
               className="w-full text-black px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
               required
             >
-              <option value="">Sélectionner un client</option>
+              <option value="">Select a client</option>
               {clients.map((client) => (
                 <option key={client} value={client}>
                   {client}
@@ -59,7 +59,7 @@ export default function StepClientInfo({ ticket, handleChange, handleNext, handl
                 onClick={() => setShowCustomInput(false)}
                 className="text-sm text-blue-600 hover:text-blue-800"
               >
-                Retour à la liste
+                return to the list
               </button>
             </div>
           )}
@@ -74,7 +74,7 @@ export default function StepClientInfo({ ticket, handleChange, handleNext, handl
             className="w-full text-black placeholder:text-gray[300] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
             required
           >
-            <option value="">Sélectionner une station</option>
+            <option value="">Select a station</option>
             {stations.map((station) => (
               <option key={station} value={station}>
                 {station}
@@ -114,14 +114,14 @@ export default function StepClientInfo({ ticket, handleChange, handleNext, handl
           onClick={handlePrev}
           className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
         >
-          Précédent
+          Previous
         </button>
         <button
           type="button"
           onClick={handleNext}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
         >
-          Suivant
+          Next
         </button>
       </div>
     </div>
