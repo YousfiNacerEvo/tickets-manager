@@ -1,7 +1,7 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function LoginPage() {
@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo');
 
   // Utilise le helper pour créer le client Supabase côté client
   const supabase = createClientComponentClient();
@@ -30,9 +32,18 @@ export default function LoginPage() {
       }
 
       if (data?.session) {
-        // Stocke le token dans un cookie pour le backend Express
         document.cookie = `token=${data.session.access_token}; path=/; secure; samesite=strict`;
-        window.location.href = '/dashboard';
+        console.log('redirectTo:', redirectTo);
+        if (redirectTo) {
+          const decodedRedirect = decodeURIComponent(redirectTo);
+          if (decodedRedirect.startsWith('http')) {
+            window.location.href = decodedRedirect;
+          } else {
+            router.push(decodedRedirect);
+          }
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         throw new Error("Erreur de connexion");
       }

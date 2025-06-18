@@ -12,14 +12,9 @@ export async function middleware(req) {
   console.log('Pathname:', pathname);
   console.log('Cookies:', req.cookies.getAll());
 
-  const { data: { session } } = await supabase.auth.getSession();
-  console.log('Session middleware:', session);
-
   // Routes publiques qui ne nécessitent pas d'authentification
   const publicRoutes = ['/Login', '/Login/ResetPassword', '/Login/update-password'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-
-  // Vérifier si c'est une tentative de réinitialisation de mot de passe
   const isPasswordReset = pathname.startsWith('/Login/update-password') && req.nextUrl.searchParams.has('code');
 
   if (isPublicRoute || isPasswordReset) {
@@ -27,9 +22,13 @@ export async function middleware(req) {
     return res;
   }
 
+  // Vérifie la session
+  const { data: { session } } = await supabase.auth.getSession();
+
   if (!session) {
     console.log('Session non trouvée, redirection vers /Login');
     const redirectUrl = new URL('/Login', req.url);
+    redirectUrl.searchParams.set('redirectTo', req.url);
     return NextResponse.redirect(redirectUrl);
   }
 
