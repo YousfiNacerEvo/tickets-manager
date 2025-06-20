@@ -14,9 +14,8 @@ export default function AddAccount() {
   const [userChecked, setUserChecked] = useState(false);
 
   useEffect(() => {
-    const u = localStorage.getItem('user');
-    const user = u ? JSON.parse(u) : null;
-    if (!user || user.user_metadata?.role !== 'admin') {
+    const role = localStorage.getItem('role');
+    if (role !== 'admin') {
       router.push('/dashboard');
     } else {
       setUserChecked(true);
@@ -53,7 +52,7 @@ export default function AddAccount() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 text-black">
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-8">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Créer un compte</h2>
+          <h2 className="text-3xl font-bold text-gray-900">Add user</h2>
         </div>
 
         {error && (
@@ -80,7 +79,7 @@ export default function AddAccount() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Mot de passe
+              Password
             </label>
             <input
               type="password"
@@ -99,7 +98,7 @@ export default function AddAccount() {
               disabled={loading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {loading ? 'Création en cours...' : 'Créer le compte'}
+              {loading ? 'Adding...' : 'Add user'}
             </button>
           </div>
         </form>

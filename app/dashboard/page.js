@@ -139,7 +139,7 @@ export default function Dashboard() {
       {
         label: "Nombre d'incidents",
         data: priorityCounts,
-        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
       },
     ],
   };
@@ -168,7 +168,7 @@ export default function Dashboard() {
       {
         label: "Nombre d'incidents",
         data: statusCounts,
-        backgroundColor: 'rgba(153, 102, 255, 0.5)',
+        backgroundColor: 'rgba(16, 32, 82, 0.5)',
       },
     ],
   };
@@ -180,7 +180,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* NOC Ticket By Station */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-black">NOC Ticket By Client</h2>
+          <h2 className="text-xl font-semibold mb-4 text-black">Tickets By Client</h2>
           <div style={{ height: '400px' }}>
             <Bar options={chartOptions} data={ticketsByStationData} />
           </div>
@@ -188,7 +188,7 @@ export default function Dashboard() {
 
         {/* STE iDirect Incidents By Priority */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-black">STE iDirect Incidents By Priority</h2>
+          <h2 className="text-xl font-semibold mb-4 text-black">Tickets By Priority</h2>
           <div style={{ height: '400px' }}>
             <Bar options={chartOptions} data={incidentsByPriorityData} />
           </div>
@@ -196,7 +196,7 @@ export default function Dashboard() {
 
         {/* NOC Osticket Categories */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-black">NOC Osticket Sation</h2>
+          <h2 className="text-xl font-semibold mb-4 text-black">Tickets By Sation</h2>
           <div style={{ height: '400px' }}>
             <Bar options={chartOptions} data={nocOsticketCategoriesData} />
           </div>
@@ -204,7 +204,7 @@ export default function Dashboard() {
 
         {/* STE iDirect Incidents By Status */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-black">STE iDirect Incidents By Status</h2>
+          <h2 className="text-xl font-semibold mb-4 text-black">Tickets  By Status</h2>
           <div style={{ height: '400px' }}>
             <Bar options={chartOptions} data={incidentsByStatusData} />
           </div>

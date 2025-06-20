@@ -52,9 +52,8 @@ export default function ReportingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const u = localStorage.getItem('user');
-    const user = u ? JSON.parse(u) : null;
-    if (!user || user.user_metadata?.role !== 'admin') {
+    const role = localStorage.getItem('role');
+    if (role !== 'admin') {
       router.push('/dashboard');
       setIsAdmin(false);
     } else {

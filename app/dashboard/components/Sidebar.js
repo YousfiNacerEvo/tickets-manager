@@ -8,13 +8,15 @@ import { useEffect, useState } from "react";
 
 export default function Sidebar() {
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
   useEffect(() => {
     if (typeof window !== "undefined") {
       const u = localStorage.getItem("user");
       setUser(u ? JSON.parse(u) : null);
+      setRole(localStorage.getItem("role"));
     }
   }, []);
-  const isAdmin = user?.user_metadata?.role === "admin";
+  const isAdmin = role === "admin";
   const menu = [
     { label: "Dashboard", icon: <FaChartBar />, href: "/dashboard" },
     { label: "Create Ticket", icon: <FaPlus />, href: "/dashboard/create" },

@@ -26,13 +26,20 @@ export default function LoginPageInner() {
         email,
         password,
       });
-
+      console.log("lesqdf : data", data);
       if (error) {
         throw error;
       }
 
       if (data?.session) {
         document.cookie = `token=${data.session.access_token}; path=/; secure; samesite=strict`;
+
+        // Récupère le rôle depuis les métadonnées utilisateur
+        const role = data.user?.user_metadata?.role
+        if (role) {
+          localStorage.setItem('role', role); // Ou tu peux aussi le mettre dans un cookie si tu préfères
+        }
+
         console.log('redirectTo:', redirectTo);
         if (redirectTo) {
           const decodedRedirect = decodeURIComponent(redirectTo);
