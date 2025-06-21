@@ -177,16 +177,9 @@ export default function ReportingPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Rapports</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Report</h1>
         <div className="space-x-2">
-          <Button onClick={exportToExcel} variant="outline" className="text-white hover:bg-gray-100">
-            <FileDown className="mr-2 h-4 w-4" />
-            Excel
-          </Button>
-          <Button onClick={exportToPDF} variant="outline" className="text-white hover:bg-gray-100">
-            <Download className="mr-2 h-4 w-4 text-white" />
-            PDF
-          </Button>
+         
         </div>
       </div>
 
@@ -288,7 +281,7 @@ export default function ReportingPage() {
                     <div className="text-2xl font-bold text-gray-800">
                       {reportData?.stats?.averageResolutionTime && reportData.stats.resolved > 0
                         ? `${Math.round(reportData.stats.averageResolutionTime)} hours`
-                        : '0 heures'}
+                        : '0 hours'}
                     </div>
                   </div>
                 </div>

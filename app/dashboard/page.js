@@ -313,7 +313,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard Technique</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Technical Dashboard</h1>
         <div className="flex gap-2">
           <button
             onClick={exportToPDF}
