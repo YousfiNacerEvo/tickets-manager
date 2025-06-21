@@ -41,7 +41,7 @@ export function isAuthenticated() {
 
 export async function addAccount(email, password) {
   try {
-    console.log("ca enrer dans la fonciton ")
+    console.log("Début de la fonction addAccount");
     const response = await fetch(`${API_URL}/add-account`, {
       method: "POST",
       headers: {
@@ -49,14 +49,19 @@ export async function addAccount(email, password) {
       },
       body: JSON.stringify({ email, password }),
     });
-    console.log("et ca cest apres le fetch")
+    
+    console.log("Réponse reçue du serveur:", response.status);
+    
     const data = await response.json();
-    if (data.error) {
-      throw new Error(data.error);
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors de la création du compte');
     }
+    
+    console.log("Compte créé avec succès:", data);
     return data;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Erreur dans addAccount:", error);
     throw error;
   }
 }

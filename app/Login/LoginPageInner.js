@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
@@ -64,9 +65,16 @@ export default function LoginPageInner() {
   return (
     <div className="bg-gray-100">
      <div className=" text-center bg-gray-100 mt-8">
-        <h1 className="text-4xl font-bold text-blue-800 mb-2">ASBU</h1>
-        <p className="text-xl text-gray-700 mb-1">اتحاد إذاعات الدول العربية</p>
-        <p className="text-md text-gray-500">جامعة الدول العربية</p>
+        <div className="flex justify-center mb-2">
+          <Image
+            src="/logo.png"
+            alt="ASBU Logo"
+            width={300}
+            height={300}
+            className="object-contain"
+          />
+        </div>
+        
       </div>
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
        

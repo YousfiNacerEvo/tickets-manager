@@ -11,6 +11,7 @@ export default function AddAccount() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(null)
   const [userChecked, setUserChecked] = useState(false);
 
   useEffect(() => {
@@ -34,15 +35,26 @@ export default function AddAccount() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    console.log("summbittt")
+    setSuccess(null)
+    
     try {
-      // Créer l'utilisateur dans Supabase Auth
-      console.log("avant call de addcount");
-      const { data, error } = await addAccount(formData.email, formData.password)
-      console.log("apres le call");
-      router.push('/dashboard')
+      console.log("Soumission du formulaire pour:", formData.email);
+      const result = await addAccount(formData.email, formData.password)
+      console.log("Résultat de la création:", result);
+      
+      // Réinitialiser le formulaire
+      setFormData({ email: '', password: '' })
+      
+      // Afficher le message de succès
+      setSuccess('user added successfully !')
+      
+      // Rediriger vers le dashboard après 2 secondes
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 2000)
     } catch (err) {
-      setError(err.message)
+      console.error("Erreur lors de la création:", err);
+      setError(err.message || 'Une erreur est survenue lors de la création du compte')
     } finally {
       setLoading(false)
     }
@@ -58,6 +70,12 @@ export default function AddAccount() {
         {error && (
           <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 text-green-600 rounded-lg">
+            {success}
           </div>
         )}
 

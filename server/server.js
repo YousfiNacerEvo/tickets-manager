@@ -230,37 +230,34 @@ app.post('/tickets/upload', authenticateToken, upload.array('files', 10), async 
 });
 
 app.post('/add-account', async (req, res) => {
-  // try {
-  // Vérifier si l'utilisateur est un administrateur
-  console.log("enter your add account server")
-  
   try {
-    console.log("avant add acout");
-    const { data, error } = await supabase.auth.admin.listUsers();
-    if (error) console.log("l'eer",error);
-    console.log(data);
-  }catch(e){
-    console.log("erreur lor de la creation :", e);
+    console.log("Entering add-account endpoint");
+    
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email et mot de passe requis' });
+    }
+
+    // Créer l'utilisateur avec Supabase Auth
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: email,
+      password: password,
+      email_confirm: true // Confirmer automatiquement l'email
+    });
+
+    if (error) {
+      console.error('Erreur Supabase:', error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.log('Utilisateur créé avec succès:', data);
+    res.json({ success: true, user: data.user });
+    
+  } catch (error) {
+    console.error('Erreur lors de la création du compte:', error);
+    res.status(500).json({ error: 'Erreur lors de la création du compte' });
   }
-
-  //   if (userError || !userData || userData.role !== 'admin') {
-  //     return res.status(403).json({ error: 'Accès non autorisé. Seuls les administrateurs peuvent créer des comptes.' });
-  //   }
-
-  //   const { email, password } = req.body;
-  //   const { data, error } = await supabase.auth.signUp({
-  //     email,
-  //     password,
-  //   });
-
-  //   if (error) {
-  //     return res.status(400).json({ error: error.message });
-  //   }
-  //   res.json(data);
-  // } catch (error) {
-  //   console.error('Erreur lors de la création du compte:', error);
-  //   res.status(500).json({ error: 'Erreur lors de la création du compte' });
-  // }
 });
 
 
