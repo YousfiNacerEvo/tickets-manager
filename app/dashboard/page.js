@@ -21,6 +21,7 @@ import {
   getIncidentsByStatus,
   getClientToken
 } from '@/services/ticketservice';
+import DashboardCharts from './components/DashboardCharts';
 
 // Enregistrer les composants Chart.js nécessaires
 ChartJS.register(
@@ -314,20 +315,6 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-gray-800">Technical Dashboard</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={exportToPDF}
-            className="bg-[#155DFC] hover:bg-[#3498DB] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            📄 Exporter PDF
-          </button>
-          <button
-            onClick={exportToExcel}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            📊 Exporter Excel
-          </button>
-        </div>
       </div>
       
       <div ref={dashboardRef} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4">
@@ -343,34 +330,7 @@ export default function Dashboard() {
             />
           </div>
         </div>
-        {/* NOC Ticket By Station */}
-        <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Client</h2>
-          <div style={{ height: '250px', width: '100%' }}>
-            <Bar options={chartOptions} data={ticketsByStationData} />
-          </div>
-        </div>
-        {/* STE iDirect Incidents By Priority */}
-        <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Priority</h2>
-          <div style={{ height: '250px', width: '100%' }}>
-            <Bar options={chartOptions} data={incidentsByPriorityData} />
-          </div>
-        </div>
-        {/* NOC Osticket Categories */}
-        <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Station</h2>
-          <div style={{ height: '250px', width: '100%' }}>
-            <Bar options={chartOptions} data={nocOsticketCategoriesData} />
-          </div>
-        </div>
-        {/* STE iDirect Incidents By Status */}
-        <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Status</h2>
-          <div style={{ height: '250px', width: '100%' }}>
-            <Bar options={chartOptions} data={incidentsByStatusData} />
-          </div>
-        </div>
+        <DashboardCharts stats={stats} />
       </div>
     </div>
   );
