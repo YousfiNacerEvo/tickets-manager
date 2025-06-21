@@ -206,7 +206,7 @@ export default function ReportingPage() {
                         format(date.from, "dd/MM/yyyy")
                       )
                     ) : (
-                      <span>Sélectionner une période</span>
+                      <span>Select the Period</span>
                     )}
                   </Button>
                 </PopoverTrigger>
