@@ -7,80 +7,61 @@ export default function UpdatePasswordForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const router = useRouter();
   const supabase = createPagesBrowserClient();
 
-  // 1) Récupération manuelle de access_token & refresh_token depuis le fragment d'URL
+  // 1️⃣ On monte un listener pour récupérer la session lors du PASSWORD_RECOVERY
   useEffect(() => {
-    async function init() {
-      try {
-        const hash = window.location.hash; // "#access_token=...&refresh_token=..."
-        if (!hash) {
-          throw new Error('Lien invalide ou expiré.');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setSession(session);
+          setLoading(false);
         }
-        const params = new URLSearchParams(hash.slice(1));
-        const access_token = params.get('access_token');
-        const refresh_token = params.get('refresh_token');
-        console.log('Reset params:', Object.fromEntries(params.entries())); // debug
+      }
+    );
 
-        if (!access_token || !refresh_token) {
-          throw new Error('Tokens manquants dans l’URL.');
-        }
-
-        // 2) Création de la session côté client
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token,
-          refresh_token
-        });
-        if (sessionError) {
-          throw sessionError;
-        }
-
-        // 3) Nettoyage de l’URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } catch (err) {
-        console.error('[Reset] setSession error', err);
-        setError(err.message);
-      } finally {
+    // Si 10 s passent et qu’on n’a pas eu l’event, on considère le lien invalide
+    const timeout = setTimeout(() => {
+      if (!session) {
+        setError('Le lien est invalide ou a expiré. Demande un nouveau reset.');
         setLoading(false);
       }
-    }
-    init();
-  }, [supabase.auth]);
+    }, 10_000);
 
-  // 4) Soumission du formulaire de nouveau mot de passe
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, [supabase.auth, session]);
+
+  // 2️⃣ Lorsque l’utilisateur soumet son nouveau mot de passe
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-
     if (password !== confirmPassword) {
       setError('Les mots de passe ne correspondent pas.');
       return;
     }
-
     setLoading(true);
     try {
       const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) {
-        throw updateError;
-      }
-      setSuccess('Mot de passe mis à jour ! Redirection vers la page de login…');
+      if (updateError) throw updateError;
+      setSuccess('Mot de passe mis à jour ! Redirection…');
       await supabase.auth.signOut();
-      setTimeout(() => {
-        router.push('/Login');
-      }, 2500);
+      setTimeout(() => router.push('/Login'), 2500);
     } catch (err) {
-      console.error('[Reset] updateUser error', err);
       setError(err.message || 'Erreur lors de la mise à jour du mot de passe.');
     } finally {
       setLoading(false);
     }
   };
 
-  // 5) Rendu selon l’état
+  // 3️⃣ Affichage selon l’état
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -88,11 +69,10 @@ export default function UpdatePasswordForm() {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <h2 className="text-2xl font-bold mb-4">Réinitialisation impossible</h2>
+        <h2 className="text-2xl font-bold mb-4">Impossible de réinitialiser</h2>
         <div className="rounded bg-red-50 text-red-700 p-4 text-center">{error}</div>
         <a
           href="/Login/ResetPassword"
@@ -103,7 +83,6 @@ export default function UpdatePasswordForm() {
       </div>
     );
   }
-
   if (success) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
@@ -112,7 +91,6 @@ export default function UpdatePasswordForm() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="max-w-md w-full space-y-8">
@@ -128,7 +106,7 @@ export default function UpdatePasswordForm() {
               disabled={loading}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 rounded-t-md focus:outline-none"
+              className="block w-full px-3 py-2 border rounded-t-md focus:outline-none"
             />
             <input
               type="password"
@@ -137,7 +115,7 @@ export default function UpdatePasswordForm() {
               disabled={loading}
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
-              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 rounded-b-md focus:outline-none"
+              className="block w-full px-3 py-2 border rounded-b-md focus:outline-none"
             />
           </div>
           <button
