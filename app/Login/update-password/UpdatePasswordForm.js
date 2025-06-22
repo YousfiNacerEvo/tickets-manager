@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
 
 export default function UpdatePasswordForm() {
@@ -9,57 +9,37 @@ export default function UpdatePasswordForm() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [session, setSession] = useState(null);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createPagesBrowserClient();
 
+  // 1️⃣ Au montage, on récupère la session depuis le cookie
   useEffect(() => {
-    async function init() {
+    const init = async () => {
       try {
-        // 1) Récupère access & refresh token soit dans le hash (#), soit dans la query (?)
-        const hashParams = new URLSearchParams(window.location.hash.slice(1));
-        const queryParams = new URLSearchParams(window.location.search);
-
-        const access_token =
-          hashParams.get('access_token') ||
-          queryParams.get('access_token');
-        const refresh_token =
-          hashParams.get('refresh_token') ||
-          queryParams.get('refresh_token');
-
-        console.log('→ access_token:', access_token);
-        console.log('→ refresh_token:', refresh_token);
-
-        if (!access_token || !refresh_token) {
-          // si Supabase a mis un ?error=… on le gère ici
-          const err = searchParams.get('error_description');
-          throw new Error(err ? decodeURIComponent(err) : 'Lien invalide ou expiré.');
+        // GoTrue a validé le token de recovery en cookie lors du /verify
+        const {
+          data: { session: sess },
+          error: sessErr,
+        } = await supabase.auth.getSession();
+        if (sessErr || !sess) {
+          throw new Error(
+            'Le lien est invalide ou a expiré. Merci de redemander un nouveau lien.'
+          );
         }
-
-        // 2) Initialise la session
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        });
-        if (sessionError) throw sessionError;
-
-        // 3) Nettoie l’URL pour ne plus voir tokens ni erreurs
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname
-        );
+        setSession(sess);
       } catch (err) {
-        console.error('[Reset] setSession error', err);
+        console.error('[Reset] getSession error', err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
-    }
+    };
     init();
-  }, [searchParams, supabase.auth]);
+  }, [supabase.auth]);
 
+  // 2️⃣ Soumission du formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -69,9 +49,9 @@ export default function UpdatePasswordForm() {
     }
     setLoading(true);
     try {
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) throw updateError;
-      setSuccess('Mot de passe mis à jour ! Redirection…');
+      const { error: updateErr } = await supabase.auth.updateUser({ password });
+      if (updateErr) throw updateErr;
+      setSuccess('Mot de passe mis à jour ! Vous allez être redirigé.');
       await supabase.auth.signOut();
       setTimeout(() => router.push('/Login'), 2500);
     } catch (err) {
@@ -82,6 +62,7 @@ export default function UpdatePasswordForm() {
     }
   };
 
+  // 3️⃣ UI selon l’état
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -89,10 +70,11 @@ export default function UpdatePasswordForm() {
       </div>
     );
   }
+
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <h2 className="text-2xl font-bold mb-4">Impossible de réinitialiser</h2>
+        <h2 className="text-2xl font-bold mb-4">Réinitialisation impossible</h2>
         <div className="bg-red-50 text-red-700 p-4 rounded text-center">{error}</div>
         <a
           href="/Login/ResetPassword"
@@ -103,6 +85,7 @@ export default function UpdatePasswordForm() {
       </div>
     );
   }
+
   if (success) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
@@ -111,6 +94,8 @@ export default function UpdatePasswordForm() {
       </div>
     );
   }
+
+  // session valide → afficher le formulaire
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="max-w-md w-full space-y-8">
