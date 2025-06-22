@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
 
 function UpdatePasswordFormContent() {
   const [password, setPassword] = useState('');
@@ -13,7 +13,7 @@ function UpdatePasswordFormContent() {
   const [isCodeVerified, setIsCodeVerified] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createBrowserSupabaseClient();
+  const supabase = createPagesBrowserClient();
 
   useEffect(() => {
     const initializeReset = async () => {
