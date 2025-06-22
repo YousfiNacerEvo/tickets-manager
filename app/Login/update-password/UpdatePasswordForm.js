@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { resetPassword } from '../../../services/auth';
 
 export default function UpdatePasswordForm() {
   const [password, setPassword] = useState("");
@@ -31,12 +32,7 @@ export default function UpdatePasswordForm() {
       return;
     }
     try {
-      const res = await fetch("/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token, new_password: password }),
-      });
-      const data = await res.json();
+      const data = await resetPassword(access_token, password);
       if (data.success) {
         setMessage("Mot de passe réinitialisé avec succès. Vous pouvez vous connecter.");
         setTimeout(() => router.push("/Login"), 2000);
@@ -44,7 +40,7 @@ export default function UpdatePasswordForm() {
         setError(data.error || "Erreur lors de la réinitialisation.");
       }
     } catch (err) {
-      setError("Erreur réseau ou serveur. Veuillez réessayer.");
+      setError(err.message || "Erreur réseau ou serveur. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
     }

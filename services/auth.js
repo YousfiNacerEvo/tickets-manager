@@ -139,3 +139,30 @@ export async function updateTicket(ticketId, ticketData, token) {
     throw error;
   }
 }
+
+/**
+ * Réinitialise le mot de passe d'un utilisateur via le backend sécurisé.
+ * @param {string} access_token - Le token reçu dans l'URL de réinitialisation.
+ * @param {string} new_password - Le nouveau mot de passe choisi par l'utilisateur.
+ * @returns {Promise<Object>} - La réponse du backend.
+ * @throws {Error} - Si la requête échoue ou que le backend retourne une erreur.
+ */
+export async function resetPassword(access_token, new_password) {
+  try {
+    const response = await fetch(`${API_URL}/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ access_token, new_password }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur lors de la réinitialisation du mot de passe.');
+    }
+    return data;
+  } catch (error) {
+    console.error('Erreur dans resetPassword:', error);
+    throw error;
+  }
+}
