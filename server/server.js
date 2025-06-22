@@ -784,6 +784,24 @@ app.post('/reset-password', async (req, res) => {
   return res.json({ success: true });
 });
 
+// Vérifie si un utilisateur existe par email
+app.get('/check-user-exists', async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+  try {
+    const { data, error } = await supabase.auth.admin.listUsers();
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    const userExists = data.users.some(user => user.email === email);
+    res.json({ exists: userExists });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 const PORT = 10000;
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);

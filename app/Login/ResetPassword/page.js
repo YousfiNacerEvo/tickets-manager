@@ -17,6 +17,15 @@ export default function ResetPassword() {
     setError('');
 
     try {
+      // Vérifie si l'email existe dans l'application
+      const checkRes = await fetch('https://tickets-manager-kappa.vercel.app/check-user-exists?email=' + encodeURIComponent(email));
+      const checkData = await checkRes.json();
+      if (!checkData.exists) {
+        setError('This email does not exist in our application.');
+        setIsLoading(false);
+        return;
+      }
+
       const siteUrl = 'https://tickets-manager-kappa.vercel.app';
       // The redirect URL should NOT include the email, only the path
       const redirectTo = `${siteUrl}/Login/update-password`;

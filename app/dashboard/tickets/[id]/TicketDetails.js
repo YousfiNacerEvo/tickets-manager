@@ -58,6 +58,9 @@ export default function TicketDetails({ ticket }) {
     resolutionComment: ticket.resolution_comment || '',
   });
 
+  const MAX_FILES = 5;
+  const canAddMoreFiles = formData.files.length < MAX_FILES;
+
   useEffect(() => {
     fetchComments();
   }, [ticket.id]);
@@ -229,6 +232,11 @@ export default function TicketDetails({ ticket }) {
             </button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6 text-black">
+            {isEditing && (
+              <div className="mb-4 p-3 rounded bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+                You are in edit mode. Modify the fields and then click <b>Save changes</b> or <b>Cancel edit</b>.
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
@@ -304,7 +312,7 @@ export default function TicketDetails({ ticket }) {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <p className="text-gray-900 whitespace-pre-wrap">{ticket.description}</p>
+                <p className="text-gray-900 whitespace-pre-wrap break-words">{ticket.description}</p>
               </div>
             </div>
 
@@ -427,8 +435,14 @@ export default function TicketDetails({ ticket }) {
               <div className="flex flex-col items-center">
                 {isEditing ? (
                   <div className="w-full max-w-md">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors"
-                        onClick={() => fileInputRef.current.click()}>
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
+                        canAddMoreFiles
+                          ? 'border-gray-300 hover:border-blue-500'
+                          : 'border-red-300 bg-red-50 cursor-not-allowed'
+                      }`}
+                      onClick={() => canAddMoreFiles && fileInputRef.current.click()}
+                    >
                       {formData.files && formData.files.length > 0 ? (
                         <div className="space-y-2">
                           {formData.files.map((file, index) => (
@@ -466,6 +480,14 @@ export default function TicketDetails({ ticket }) {
                           <p className="text-xs text-gray-400 mt-1">Maximum total size: 20MB</p>
                         </div>
                       )}
+                      <div className="mt-2 text-sm text-gray-600">
+                        {formData.files.length} / {MAX_FILES} files added
+                      </div>
+                      {!canAddMoreFiles && (
+                        <div className="mt-2 text-red-600 font-semibold">
+                          Maximum number of files reached
+                        </div>
+                      )}
                     </div>
                     <input
                       type="file"
@@ -473,6 +495,7 @@ export default function TicketDetails({ ticket }) {
                       ref={fileInputRef}
                       className="hidden"
                       onChange={handleFileChange}
+                      disabled={!canAddMoreFiles}
                     />
                   </div>
                 ) : (
@@ -510,37 +533,40 @@ export default function TicketDetails({ ticket }) {
               </div>
             </div>
 
-            <div className="flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard/tickets')}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    updating...
-                  </>
-                ) : (
-                  'update'
-                )}
-              </button>
-            </div>
+            {isEditing && (
+              <div className="flex justify-end gap-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                >
+                  Cancel edit
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save changes'
+                  )}
+                </button>
+              </div>
+            )}
           </form>
 
+          <hr className="my-8 border-t-2 border-gray-200" />
+
           {/* Comments Section - Outside the main form */}
-          <div className="border-t pt-6 mt-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Comment</h2>
-            
+          <div className="border border-blue-100 bg-blue-50 rounded-xl p-6 mt-4 shadow-sm">
+            <h2 className="text-xl font-semibold mb-4 text-blue-800">Commentaires</h2>
             {/* Comments List */}
             <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
               {comments.map((comment) => (

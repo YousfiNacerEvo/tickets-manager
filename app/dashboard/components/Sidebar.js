@@ -7,12 +7,25 @@ import Image from 'next/image';
 import { useEffect, useState } from "react";
 
 export default function Sidebar() {
-  const [user, setUser] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
   const [role, setRole] = useState(null);
   useEffect(() => {
     if (typeof window !== "undefined") {
       const u = localStorage.getItem("user");
-      setUser(u ? JSON.parse(u) : null);
+      let email = null;
+      try {
+        const parsed = JSON.parse(u);
+        if (parsed && typeof parsed === "object" && parsed.email) {
+          email = parsed.email;
+        } else if (typeof parsed === "string") {
+          email = parsed;
+        }
+      } catch {
+        if (typeof u === "string") {
+          email = u;
+        }
+      }
+      setUserEmail(email);
       setRole(localStorage.getItem("role"));
     }
   }, []);
@@ -30,6 +43,7 @@ export default function Sidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
+    localStorage.clear();
     Logout();
     router.push('/Login');
   };
@@ -43,9 +57,16 @@ export default function Sidebar() {
           width={200}
           height={200}
         >
-
         </Image>
       </div>
+      {userEmail && (
+        <div className="mb-6 flex items-center justify-center gap-2 text-sm text-blue-800 bg-blue-50 border border-blue-100 rounded p-2">
+          <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-7 2-7 4v1a1 1 0 001 1h12a1 1 0 001-1v-1c0-2-3-4-7-4z"/>
+          </svg>
+          <span className="truncate">{userEmail}</span>
+        </div>
+      )}
       <nav className="flex-1 space-y-2">
         {menu.map((item) => (
           <Link

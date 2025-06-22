@@ -41,6 +41,11 @@ export default function LoginPageInner() {
           localStorage.setItem('role', role); // Ou tu peux aussi le mettre dans un cookie si tu préfères
         }
 
+        // Stocke l'email dans le localStorage pour la sidebar
+        if (data.user?.email) {
+          localStorage.setItem('user', JSON.stringify({ email: data.user.email }));
+        }
+
         console.log('redirectTo:', redirectTo);
         if (redirectTo) {
           const decodedRedirect = decodeURIComponent(redirectTo);
