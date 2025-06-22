@@ -18,15 +18,31 @@ function UpdatePasswordFormContent() {
   useEffect(() => {
     const initializeReset = async () => {
       const code = searchParams.get('code');
+      console.log('[PKCE] code from URL:', code);
       if (!code) {
         setError('Invalid reset link: code is missing.');
         return;
+      }
+
+      // Log localStorage content
+      if (typeof window !== 'undefined') {
+        try {
+          const allKeys = Object.keys(localStorage);
+          const allValues = allKeys.reduce((acc, key) => {
+            acc[key] = localStorage.getItem(key);
+            return acc;
+          }, {});
+          console.log('[PKCE] localStorage content:', allValues);
+        } catch (e) {
+          console.log('[PKCE] Error reading localStorage:', e);
+        }
       }
 
       // Check PKCE codeVerifier in localStorage
       const codeVerifier = typeof window !== 'undefined'
         ? localStorage.getItem('supabase.auth.code_verifier')
         : null;
+      console.log('[PKCE] codeVerifier from localStorage:', codeVerifier);
 
       if (!codeVerifier) {
         setError('The PKCE verification code is missing. Please request a new password reset link and make sure to open it in the same browser and tab where you requested it.');
@@ -36,13 +52,16 @@ function UpdatePasswordFormContent() {
       try {
         const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) {
+          console.error('[PKCE] exchangeCodeForSession error:', exchangeError);
           throw exchangeError;
         }
         if (!data.session) {
+          console.error('[PKCE] No session after code exchange:', data);
           throw new Error('Session was not created after code exchange.');
         }
         setIsCodeVerified(true);
       } catch (error) {
+        console.error('[PKCE] Error during code verification:', error);
         if (error.message?.toLowerCase().includes('expired') || error.message?.toLowerCase().includes('invalid')) {
           setError('The reset link has expired or is invalid. Please request a new link.');
         } else if (error.message?.includes('AuthApiError')) {
@@ -74,6 +93,7 @@ function UpdatePasswordFormContent() {
     try {
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) {
+        console.error('[PKCE] updateUser error:', updateError);
         throw updateError;
       }
       setMessage('Your password has been reset successfully. You will be redirected to the login page.');
@@ -82,6 +102,7 @@ function UpdatePasswordFormContent() {
         router.push('/Login');
       }, 3000);
     } catch (error) {
+      console.error('[PKCE] Error during password update:', error);
       setError(error.message || 'An error occurred while resetting the password.');
     } finally {
       setIsLoading(false);
