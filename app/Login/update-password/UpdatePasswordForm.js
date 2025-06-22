@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
 
 function UpdatePasswordFormContent() {
   const [password, setPassword] = useState('');
@@ -13,7 +13,7 @@ function UpdatePasswordFormContent() {
   const [isCodeVerified, setIsCodeVerified] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserSupabaseClient();
 
   useEffect(() => {
     const initializeReset = async () => {
@@ -21,6 +21,15 @@ function UpdatePasswordFormContent() {
       
       if (!code) {
         setError('Invalid reset link: code is missing.');
+        return;
+      }
+
+      const codeVerifier = typeof window !== 'undefined'
+        ? localStorage.getItem('supabase.auth.code_verifier')
+        : null;
+
+      if (!codeVerifier) {
+        setError('Le code de vérification PKCE est manquant. Veuillez recommencer la procédure de réinitialisation.');
         return;
       }
 
@@ -32,17 +41,17 @@ function UpdatePasswordFormContent() {
         }
 
         if (!data.session) {
-          throw new Error('Session was not created after code exchange.');
+          throw new Error('Session was not créée après échange du code.');
         }
 
         setIsCodeVerified(true);
       } catch (error) {
         if (error.message?.toLowerCase().includes('expired') || error.message?.toLowerCase().includes('invalid')) {
-          setError('The reset link has expired or is invalid. Please request a new link.');
+          setError('Le lien de réinitialisation a expiré ou est invalide. Veuillez demander un nouveau lien.');
         } else if (error.message?.includes('AuthApiError')) {
-          setError('Authentication error. Please request a new reset link.');
+          setError('Erreur d’authentification. Veuillez demander un nouveau lien.');
         } else {
-          setError('An error occurred while verifying the code. Please request a new link.');
+          setError('Une erreur est survenue lors de la vérification du code. Veuillez demander un nouveau lien.');
         }
       }
     };
