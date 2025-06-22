@@ -18,14 +18,14 @@ export default function UpdatePasswordForm() {
   useEffect(() => {
     const init = async () => {
       try {
-        // GoTrue a validé le token de recovery en cookie lors du /verify
+        // GoTrue validated the recovery token in the cookie during /verify
         const {
           data: { session: sess },
           error: sessErr,
         } = await supabase.auth.getSession();
         if (sessErr || !sess) {
           throw new Error(
-            'Le lien est invalide ou a expiré. Merci de redemander un nouveau lien.'
+            'The reset link is invalid or has expired. Please request a new one.'
           );
         }
         setSession(sess);
@@ -44,25 +44,25 @@ export default function UpdatePasswordForm() {
     e.preventDefault();
     setError(null);
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.');
+      setError('Passwords do not match.');
       return;
     }
     setLoading(true);
     try {
       const { error: updateErr } = await supabase.auth.updateUser({ password });
       if (updateErr) throw updateErr;
-      setSuccess('Mot de passe mis à jour ! Vous allez être redirigé.');
+      setSuccess('Password updated! You will be redirected.');
       await supabase.auth.signOut();
       setTimeout(() => router.push('/Login'), 2500);
     } catch (err) {
       console.error('[Reset] updateUser error', err);
-      setError(err.message || 'Erreur lors de la mise à jour du mot de passe.');
+      setError(err.message || 'An error occurred while updating the password.');
     } finally {
       setLoading(false);
     }
   };
 
-  // 3️⃣ UI selon l’état
+  // 3️⃣ UI selon l'état
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -74,13 +74,13 @@ export default function UpdatePasswordForm() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <h2 className="text-2xl font-bold mb-4">Réinitialisation impossible</h2>
+        <h2 className="text-2xl font-bold mb-4">Password reset failed</h2>
         <div className="bg-red-50 text-red-700 p-4 rounded text-center">{error}</div>
         <a
           href="/Login/ResetPassword"
           className="mt-4 text-indigo-600 hover:underline"
         >
-          Demander un nouveau lien
+          Request a new link
         </a>
       </div>
     );
@@ -89,7 +89,7 @@ export default function UpdatePasswordForm() {
   if (success) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <h2 className="text-2xl font-bold mb-4">Succès</h2>
+        <h2 className="text-2xl font-bold mb-4">Success</h2>
         <div className="bg-green-50 text-green-700 p-4 rounded text-center">{success}</div>
       </div>
     );
@@ -100,27 +100,27 @@ export default function UpdatePasswordForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="max-w-md w-full space-y-8">
         <h2 className="text-center text-3xl font-extrabold text-gray-900">
-          Mettre à jour le mot de passe
+          Update your password
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="rounded-md shadow-sm -space-y-px">
             <input
               type="password"
-              placeholder="Nouveau mot de passe"
+              placeholder="New password"
               required
               disabled={loading}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="block w-full px-3 py-2 border rounded-t-md focus:outline-none"
+              className="block w-full px-3 py-2 border rounded-t-md focus:outline-none text-black"
             />
             <input
               type="password"
-              placeholder="Confirmer le mot de passe"
+              placeholder="Confirm password"
               required
               disabled={loading}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="block w-full px-3 py-2 border rounded-b-md focus:outline-none"
+              className="block w-full px-3 py-2 border rounded-b-md focus:outline-none text-black"
             />
           </div>
           <button
@@ -128,7 +128,7 @@ export default function UpdatePasswordForm() {
             disabled={loading}
             className="w-full py-2 bg-indigo-600 text-white rounded disabled:opacity-50"
           >
-            {loading ? 'Patiente…' : 'Mettre à jour'}
+            {loading ? 'Please wait…' : 'Update password'}
           </button>
         </form>
       </div>
