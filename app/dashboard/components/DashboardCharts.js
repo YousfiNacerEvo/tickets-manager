@@ -123,28 +123,28 @@ export default function DashboardCharts({ stats }) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4">
-      <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+      <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center w-full">
         <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Client</h2>
-        <div style={{ height: '250px', width: '100%' }}>
+        <div style={{ height: '300px', width: '100%' }}>
           <Bar options={chartOptions} data={ticketsByStationData} />
         </div>
       </div>
-      <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center">
+      <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center w-full">
         <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Priority</h2>
-        <div style={{ height: '250px', width: '100%' }}>
+        <div style={{ height: '300px', width: '100%' }}>
           <Bar options={chartOptions} data={incidentsByPriorityData} />
         </div>
       </div>
-      <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center">
+      <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center w-full">
         <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Station</h2>
-        <div style={{ height: '250px', width: '100%' }}>
+        <div style={{ height: '300px', width: '100%' }}>
           <Bar options={chartOptions} data={nocOsticketCategoriesData} />
         </div>
       </div>
-      <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center">
+      <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center w-full">
         <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Status</h2>
-        <div style={{ height: '250px', width: '100%' }}>
+        <div style={{ height: '300px', width: '100%' }}>
           <Bar options={chartOptions} data={incidentsByStatusData} />
         </div>
       </div>

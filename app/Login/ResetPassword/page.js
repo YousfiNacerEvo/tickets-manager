@@ -18,21 +18,8 @@ export default function ResetPassword() {
 
     try {
       const siteUrl = 'https://tickets-manager-kappa.vercel.app';
-      console.log('=== DÉBUT DE LA RÉINITIALISATION ===');
-      console.log('Site URL:', siteUrl);
-      console.log('Email:', email);
-      
-      // Encoder l'email pour l'URL
-      const encodedEmail = encodeURIComponent(email);
-      const redirectTo = `${siteUrl}/Login/update-password?email=${encodedEmail}`;
-      console.log('Redirect URL complète:', redirectTo);
-
-      console.log('Tentative d\'envoi de l\'email de réinitialisation...');
-      console.log('Paramètres envoyés à resetPasswordForEmail:', {
-        email: email,
-        redirectTo: redirectTo,
-        shouldCreateUser: false
-      });
+      // The redirect URL should NOT include the email, only the path
+      const redirectTo = `${siteUrl}/Login/update-password`;
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectTo,
@@ -40,25 +27,12 @@ export default function ResetPassword() {
       });
 
       if (resetError) {
-        console.error('❌ ERREUR lors de l\'envoi:', resetError);
-        console.error('Détails de l\'erreur:', {
-          message: resetError.message,
-          status: resetError.status,
-          name: resetError.name
-        });
         throw resetError;
       }
 
-      console.log('✅ Email envoyé avec succès');
-      setMessage('Un email de réinitialisation a été envoyé à votre adresse email.');
+      setMessage('A password reset email has been sent to your email address.');
     } catch (error) {
-      console.error('❌ ERREUR complète:', error);
-      console.error('Détails de l\'erreur:', {
-        message: error.message,
-        status: error.status,
-        name: error.name
-      });
-      setError(error.message || 'Une erreur est survenue lors de l\'envoi de l\'email.');
+      setError(error.message || 'An error occurred while sending the reset email.');
     } finally {
       setIsLoading(false);
     }
@@ -69,22 +43,22 @@ export default function ResetPassword() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Réinitialisation du mot de passe
+            Reset your password
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Entrez votre adresse email pour recevoir un lien de réinitialisation
+            Enter your email address to receive a password reset link
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="sr-only">Adresse email</label>
+            <label htmlFor="email" className="sr-only">Email address</label>
             <input
               id="email"
               name="email"
               type="email"
               required
               className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Adresse email"
+              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -116,7 +90,7 @@ export default function ResetPassword() {
               disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {isLoading ? 'Envoi en cours...' : 'Envoyer le lien de réinitialisation'}
+              {isLoading ? 'Sending...' : 'Send reset link'}
             </button>
           </div>
 
@@ -125,7 +99,7 @@ export default function ResetPassword() {
               href="/Login"
               className="font-medium text-indigo-600 hover:text-indigo-500"
             >
-              Retour à la connexion
+              Back to login
             </Link>
           </div>
         </form>

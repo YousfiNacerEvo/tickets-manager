@@ -317,9 +317,9 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-800">Technical Dashboard</h1>
       </div>
       
-      <div ref={dashboardRef} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4">
+      <div className="w-full">
         {/* Logo ASBU */}
-        <div className="lg:col-span-2 xl:col-span-2 flex justify-start mb-4">
+        <div className="flex justify-start mb-4">
           <div className="text-left">
             <Image
               src="/logo.png"
