@@ -18,7 +18,7 @@ export default function ResetPassword() {
 
     try {
       // Vérifie si l'email existe dans l'application
-      const checkRes = await fetch('https://tickets-manager-kappa.vercel.app/check-user-exists?email=' + encodeURIComponent(email));
+      const checkRes = await fetch('https://gestion-ticket-back-78nj.onrender.com/check-user-exists?email=' + encodeURIComponent(email));
       const checkData = await checkRes.json();
       if (!checkData.exists) {
         setError('This email does not exist in our application.');
