@@ -758,6 +758,32 @@ function getWeekNumber(date) {
   return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
+// Réinitialisation du mot de passe via token (reset sécurisé côté serveur)
+app.post('/reset-password', async (req, res) => {
+  const { access_token, new_password } = req.body;
+
+  if (!access_token || !new_password) {
+    return res.status(400).json({ error: 'Token ou mot de passe manquant.' });
+  }
+
+  // Vérifier le token et récupérer l'utilisateur
+  const { data: userData, error: userError } = await supabase.auth.getUser(access_token);
+  if (userError || !userData || !userData.user) {
+    return res.status(401).json({ error: 'Token invalide ou expiré.' });
+  }
+
+  // Mettre à jour le mot de passe
+  const { error: updateError } = await supabase.auth.admin.updateUserById(userData.user.id, {
+    password: new_password,
+  });
+
+  if (updateError) {
+    return res.status(500).json({ error: 'Erreur lors de la mise à jour du mot de passe.' });
+  }
+
+  return res.json({ success: true });
+});
+
 const PORT = 10000;
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
