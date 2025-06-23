@@ -174,7 +174,7 @@ export default function Dashboard() {
     labels: stats.nocOsticketCategories.map(item => item.category),
     datasets: [
       {
-        label: 'total de tickets',
+        label: 'total tickets',
         data: stats.nocOsticketCategories.map(item => item.count),
         backgroundColor: '#1B2D2F',
         borderColor: '#1B2D2F',
@@ -239,7 +239,7 @@ export default function Dashboard() {
         'Tickets By Station',
         'Tickets By Status'
       ];
-      // Récupérer tous les canvas (dans l'ordre d'affichage)
+      // Récupérer tous les canvases (dans l'ordre d'affichage)
       const canvases = document.querySelectorAll('canvas');
       let i = 0;
       for (let row = 0; row < 2; row++) {
@@ -255,59 +255,59 @@ export default function Dashboard() {
           x += graphWidth + margin;
           i++;
         }
-        y += graphHeight + 18; // réduit l'espacement vertical
+        y += graphHeight + 18; // reduce vertical spacing
       }
       pdf.save('dashboard-technique.pdf');
     } catch (error) {
-      console.error('Erreur lors de l\'export PDF:', error);
-      alert('Erreur lors de l\'export PDF. Veuillez réessayer.');
+      console.error('Error while exporting PDF:', error);
+      alert('Error while exporting PDF. Please try again.');
     }
   };
 
-  // Fonction pour exporter en Excel
+  // Function to export to Excel
   const exportToExcel = () => {
     try {
       // Préparer les données pour Excel
       const workbook = XLSX.utils.book_new();
 
-      // Feuille 1: Tickets par Client
+      // Sheet 1: Tickets by Client
       const ticketsByStationWS = XLSX.utils.json_to_sheet(
         stats.ticketsByStation.map(item => ({
           'Client': item.station,
-          'Nombre de Tickets': item.count
+          'Number of Tickets': item.count
         }))
       );
-      XLSX.utils.book_append_sheet(workbook, ticketsByStationWS, 'Tickets par Client');
+      XLSX.utils.book_append_sheet(workbook, ticketsByStationWS, 'Tickets by Client');
 
-      // Feuille 2: Tickets par Priorité
+      // Sheet 2: Tickets by Priority
       const priorityData = priorityOrder.map(priority => ({
-        'Priorité': priority,
-        'Nombre de Tickets': (stats.incidentsByPriority.find(item => item.priority === priority) || { count: 0 }).count
+        'Priority': priority,
+        'Number of Tickets': (stats.incidentsByPriority.find(item => item.priority === priority) || { count: 0 }).count
       }));
       const priorityWS = XLSX.utils.json_to_sheet(priorityData);
-      XLSX.utils.book_append_sheet(workbook, priorityWS, 'Tickets par Priorité');
+      XLSX.utils.book_append_sheet(workbook, priorityWS, 'Tickets by Priority');
 
-      // Feuille 3: Tickets par Station
+      // Sheet 3: Tickets by Station
       const stationData = stats.nocOsticketCategories.map(item => ({
         'Station': item.category,
-        'Nombre de Tickets': item.count
+        'Number of Tickets': item.count
       }));
       const stationWS = XLSX.utils.json_to_sheet(stationData);
-      XLSX.utils.book_append_sheet(workbook, stationWS, 'Tickets par Station');
+      XLSX.utils.book_append_sheet(workbook, stationWS, 'Tickets by Station');
 
-      // Feuille 4: Tickets par Statut
+      // Sheet 4: Tickets by Status
       const statusData = statusOrder.map(status => ({
-        'Statut': status,
-        'Nombre de Tickets': (stats.incidentsByStatus.find(item => item.status === status) || { count: 0 }).count
+        'Status': status,
+        'Number of Tickets': (stats.incidentsByStatus.find(item => item.status === status) || { count: 0 }).count
       }));
       const statusWS = XLSX.utils.json_to_sheet(statusData);
-      XLSX.utils.book_append_sheet(workbook, statusWS, 'Tickets par Statut');
+      XLSX.utils.book_append_sheet(workbook, statusWS, 'Tickets by Status');
 
-      // Sauvegarder le fichier
+      // Save the file
       XLSX.writeFile(workbook, 'dashboard-technique.xlsx');
     } catch (error) {
-      console.error('Erreur lors de l\'export Excel:', error);
-      alert('Erreur lors de l\'export Excel');
+      console.error('Error while exporting Excel:', error);
+      alert('Error while exporting Excel');
     }
   };
 

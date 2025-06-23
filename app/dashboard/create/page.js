@@ -99,9 +99,9 @@ export default function CreateTicket() {
     setMessage({ type: '', text: '' });
     
     try {
-      // Vérification des champs requis
+      // Check required fields
       if (!ticket.client || !ticket.station) {
-        setMessage({ type: 'error', text: 'Veuillez sélectionner un client et une station.' });
+        setMessage({ type: 'error', text: 'Please select a client and a station.' });
         setIsLoading(false);
         return;
       }
@@ -110,20 +110,20 @@ export default function CreateTicket() {
       console.log('TOKEN AVANT CREATION:', token);
       console.log('Fichiers à uploader:', ticket.files);
 
-      // D'abord uploader les fichiers s'il y en a
+      // First upload files if any
       let uploadedFiles = [];
       if (ticket.files && ticket.files.length > 0) {
         try {
-          console.log('Début de l\'upload des fichiers...');
+          console.log('Starting file upload...');
           uploadedFiles = await uploadTicketFiles(ticket.files, token);
-          console.log('Fichiers uploadés avec succès:', uploadedFiles);
+          console.log('Files uploaded successfully:', uploadedFiles);
         } catch (uploadError) {
-          console.error('Erreur détaillée lors de l\'upload des fichiers:', uploadError);
-          setMessage({ type: 'error', text: 'Erreur lors de l\'upload des fichiers. Le ticket sera créé sans les fichiers.' });
+          console.error('Detailed error during file upload:', uploadError);
+          setMessage({ type: 'error', text: 'Error while uploading files. The ticket will be created without the files.' });
         }
       }
 
-      // Créer le ticket avec les URLs des fichiers uploadés
+      // Create the ticket with the uploaded file URLs
       const ticketData = {
         ...ticket,
         files: uploadedFiles // Utiliser les fichiers uploadés au lieu des objets File
@@ -131,25 +131,25 @@ export default function CreateTicket() {
 
       const backendResponse = await sendTicketToBackend(ticketData, token);
       const ticketId = Array.isArray(backendResponse) ? backendResponse[0]?.id : backendResponse?.id;
-      if (!ticketId) throw new Error("Impossible de récupérer l'identifiant du ticket créé");
+      if (!ticketId) throw new Error("Unable to retrieve the created ticket ID");
       
-      // Envoyer l'email de notification
+      // Send notification email
       if (ticket.clientEmail) {
         try {
           await sendTicketNotificationEmail(ticketId, ticket.clientEmail, token);
         } catch (emailError) {
-          console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+          console.error('Error while sending email:', emailError);
           // Continue with success message even if email fails
         }
       }
       
-      setMessage({ type: 'success', text: 'Ticket créé avec succès !' });
+      setMessage({ type: 'success', text: 'Ticket created successfully!' });
       setTimeout(() => {
         router.push('/dashboard');
       }, 2000);
     } catch (err) {
-      console.error('Erreur lors de la création du ticket:', err);
-      setMessage({ type: 'error', text: err.message || 'Erreur lors de l\'envoi du ticket au backend' });
+      console.error('Error during ticket creation:', err);
+      setMessage({ type: 'error', text: err.message || 'Error while sending ticket to backend' });
     } finally {
       setIsLoading(false);
     }

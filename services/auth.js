@@ -41,7 +41,7 @@ export function isAuthenticated() {
 
 export async function addAccount(email, password) {
   try {
-    console.log("Début de la fonction addAccount");
+    console.log("Start of addAccount function");
     const response = await fetch(`${API_URL}/add-account`, {
       method: "POST",
       headers: {
@@ -50,18 +50,18 @@ export async function addAccount(email, password) {
       body: JSON.stringify({ email, password }),
     });
     
-    console.log("Réponse reçue du serveur:", response.status);
+    console.log("Response received from server:", response.status);
     
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.error || 'Erreur lors de la création du compte');
+      throw new Error(data.error || 'Error while creating account');
     }
     
-    console.log("Compte créé avec succès:", data);
+    console.log("Account created successfully:", data);
     return data;
   } catch (error) {
-    console.error("Erreur dans addAccount:", error);
+    console.error("Error in addAccount:", error);
     throw error;
   }
 }
@@ -85,12 +85,12 @@ export async function requestPasswordReset(email) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Une erreur est survenue lors de la demande de réinitialisation.');
+      throw new Error(data.error || 'An error occurred during the reset request.');
     }
 
     return data;
   } catch (error) {
-    console.error('Erreur dans requestPasswordReset:', error);
+    console.error('Error in requestPasswordReset:', error);
     throw error;
   }
 }
@@ -107,17 +107,17 @@ export const updatePassword = async (password, token) => {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Une erreur est survenue");
+      throw new Error(error.message || "An error occurred");
     }
 
     return await response.json();
   } catch (error) {
-    throw new Error(error.message || "Une erreur est survenue lors de la mise à jour du mot de passe");
+    throw new Error(error.message || "An error occurred when updating the password");
   }
 };
 
 export async function updateTicket(ticketId, ticketData, token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
       method: 'PUT',
@@ -130,12 +130,12 @@ export async function updateTicket(ticketId, ticketData, token) {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Réponse backend updateTicket:', errorData);
-      throw new Error(errorData.error || 'Erreur lors de la mise à jour du ticket.');
+      console.error('Backend response updateTicket:', errorData);
+      throw new Error(errorData.error || 'Error while updating the ticket.');
     }
     return await response.json();
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error);
     throw error;
   }
 }

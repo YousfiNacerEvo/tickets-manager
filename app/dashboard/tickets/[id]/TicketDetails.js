@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateTicket, uploadTicketFiles, getTicketComments, addTicketComment, getClientToken } from '@/services/ticketservice';
+import { sendTicketNotificationEmail } from '@/services/emailService';
 
 export default function TicketDetails({ ticket }) {
   ticket = ticket[0]; 
@@ -16,6 +17,7 @@ export default function TicketDetails({ ticket }) {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const fileInputRef = useRef();
   const commentsEndRef = useRef(null);
+  const [successMessage, setSuccessMessage] = useState('');
   
   const formatFileUrl = (url) => {
     if (!url || typeof url !== 'string') return '';
@@ -25,6 +27,13 @@ export default function TicketDetails({ ticket }) {
       return url.replace(baseUrl + baseUrl, baseUrl);
     }
     return url;
+  };
+
+  const getFileType = (url) => {
+    if (!url || typeof url !== 'string') return '';
+    if (url.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) return 'image/';
+    if (url.match(/\.pdf$/i)) return 'application/pdf';
+    return '';
   };
 
   const [formData, setFormData] = useState({
@@ -40,17 +49,20 @@ export default function TicketDetails({ ticket }) {
     clientEmail: ticket.client_email,
     files: Array.isArray(ticket.files) ? 
       ticket.files.map(file => {
+        let url = '';
         if (typeof file === 'string') {
-          return { url: formatFileUrl(file.trim()) };
+          url = formatFileUrl(file.trim());
         } else if (file && typeof file === 'object' && file.url) {
-          return { url: formatFileUrl(file.url.trim()) };
+          url = formatFileUrl(file.url.trim());
         }
-        return { url: '' };
+        if (!url) return { url: '' };
+        return { url, type: getFileType(url) };
       }).filter(file => file.url !== '') : 
       (ticket.files ? 
         ticket.files.split(',').map(url => {
           if (typeof url === 'string') {
-            return { url: formatFileUrl(url.trim()) };
+            url = formatFileUrl(url.trim());
+            return { url, type: getFileType(url) };
           }
           return { url: '' };
         }).filter(file => file.url !== '') : 
@@ -68,12 +80,15 @@ export default function TicketDetails({ ticket }) {
   const fetchComments = async () => {
     try {
       const token = getClientToken();
-      console.log('TOKEN CLIENT TicketDetails:', token);
+      console.log('Retrieved token:', token);
+      if (!token) {
+        throw new Error("No authentication token found. Please log in again.");
+      }
       const commentsData = await getTicketComments(ticket.id, token);
-      console.log('Commentaires récupérés:', commentsData);
+      console.log('Comments retrieved:', commentsData);
       setComments(commentsData);
     } catch (error) {
-      console.error('Erreur lors de la récupération des commentaires:', error);
+      console.error('Error while retrieving comments:', error);
     }
   };
 
@@ -81,12 +96,15 @@ export default function TicketDetails({ ticket }) {
     setIsSubmittingComment(true);
     try {
       const token = getClientToken();
-      console.log('TOKEN CLIENT addTicketComment:', token);
+      console.log('Retrieved token:', token);
+      if (!token) {
+        throw new Error("No authentication token found. Please log in again.");
+      }
       await addTicketComment(ticket.id, newComment, token);
       setNewComment('');
       fetchComments();
     } catch (error) {
-      console.error('Erreur lors de l\'ajout du commentaire:', error);
+      console.error('Error while adding comment:', error);
     } finally {
       setIsSubmittingComment(false);
     }
@@ -97,9 +115,9 @@ export default function TicketDetails({ ticket }) {
     if (files.length > 0) {
       try {
         const token = getClientToken();
-        console.log('Token récupéré:', token);
+        console.log('Retrieved token:', token);
         if (!token) {
-          throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+          throw new Error("No authentication token found. Please log in again.");
         }
         const fileUrls = await uploadTicketFiles(files, token);
         console.log('File URLs received:', fileUrls); // Debug log
@@ -108,17 +126,21 @@ export default function TicketDetails({ ticket }) {
         let formattedUrls = [];
         if (Array.isArray(fileUrls)) {
           formattedUrls = fileUrls.map(url => {
+            let fileUrl = '';
             if (typeof url === 'string') {
-              return { url: formatFileUrl(url.trim()) };
+              fileUrl = formatFileUrl(url.trim());
             } else if (url && typeof url === 'object' && url.url) {
-              return { url: formatFileUrl(url.url.trim()) };
+              fileUrl = formatFileUrl(url.url.trim());
             }
-            return { url: '' };
+            if (!fileUrl) return { url: '' };
+            return { url: fileUrl, type: getFileType(fileUrl) };
           }).filter(file => file.url !== '');
         } else if (typeof fileUrls === 'string') {
-          formattedUrls = [{ url: formatFileUrl(fileUrls.trim()) }];
+          const fileUrl = formatFileUrl(fileUrls.trim());
+          formattedUrls = [{ url: fileUrl, type: getFileType(fileUrl) }];
         } else if (fileUrls && typeof fileUrls === 'object' && fileUrls.url) {
-          formattedUrls = [{ url: formatFileUrl(fileUrls.url.trim()) }];
+          const fileUrl = formatFileUrl(fileUrls.url.trim());
+          formattedUrls = [{ url: fileUrl, type: getFileType(fileUrl) }];
         }
 
         setFormData(prev => ({ 
@@ -126,8 +148,8 @@ export default function TicketDetails({ ticket }) {
           files: [...prev.files, ...formattedUrls]
         }));
       } catch (error) {
-        console.error('Erreur lors de l\'upload des fichiers:', error);
-        alert(error.message || 'Erreur lors de l\'upload des fichiers');
+        console.error('Error while uploading files:', error);
+        alert(error.message || 'Error while uploading files');
       }
     }
   };
@@ -175,13 +197,33 @@ export default function TicketDetails({ ticket }) {
       };
 
       const token = getClientToken();
-      console.log('TOKEN CLIENT updateTicket:', token);
+      console.log('Retrieved token:', token);
+      if (!token) {
+        throw new Error("No authentication token found. Please log in again.");
+      }
+      // Detect status change
+      const statusChanged = formData.status !== ticket.status;
       await updateTicket(ticket.id, updatedData, token);
+      // If status changed, send polite email to client
+      if (statusChanged && formData.clientEmail) {
+        try {
+          await sendTicketNotificationEmail(
+            ticket.id,
+            formData.clientEmail,
+            token,
+            `Dear customer, the status of your ticket is now: ${formData.status}. Thank you for your patience.`
+          );
+        } catch (emailError) {
+          console.error('Error sending status change email:', emailError);
+        }
+      }
       setIsEditing(false);
+      setSuccessMessage('Changes have been saved successfully!');
+      setTimeout(() => setSuccessMessage(''), 4000);
       router.refresh();
     } catch (error) {
-      console.error('Erreur lors de la mise à jour du ticket:', error);
-      alert(error.message || 'Erreur lors de la mise à jour du ticket');
+      console.error('Error while updating the ticket:', error);
+      alert(error.message || 'Error while updating the ticket');
     } finally {
       setIsLoading(false);
     }
@@ -232,6 +274,11 @@ export default function TicketDetails({ ticket }) {
             </button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6 text-black">
+            {successMessage && (
+              <div className="mb-4 p-3 rounded bg-green-50 border border-green-200 text-green-800 text-sm text-center">
+                {successMessage}
+              </div>
+            )}
             {isEditing && (
               <div className="mb-4 p-3 rounded bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
                 You are in edit mode. Modify the fields and then click <b>Save changes</b> or <b>Cancel edit</b>.
@@ -314,119 +361,126 @@ export default function TicketDetails({ ticket }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <p className="text-gray-900 whitespace-pre-wrap break-words">{ticket.description}</p>
               </div>
-            </div>
 
-            <div className="border-t pt-6">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">Client Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Client</label>
-                  {isEditing ? (
-                    <select
-                      name="client"
-                      value={formData.client}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select a client</option>
-                      {[
-                        "TDA Algerian VN", "AbuDhabi", "Sharjah", "NOC", "KSA", "Palastine", 
-                        "Egypt", "Dubai", "Oman", "Moroco", "Algeria", "Qatar", "Kuwait", 
-                        "Libya", "Mauritania", "HQ ASBU", "HUB", "Tunisia", "Iraq", 
-                        "Bahrain", "Sudan", "Jordan", "Teleliban"
-                      ].map((client) => (
-                        <option key={client} value={client}>
-                          {client}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <p className="text-gray-900">{ticket.client}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Station</label>
-                  {isEditing ? (
-                    <select
-                      name="station"
-                      value={formData.station}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select a station</option>
-                      {["Radio", "TV", "HUB"].map((station) => (
-                        <option key={station} value={station}>
-                          {station}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <p className="text-gray-900">{ticket.station}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  {isEditing ? (
-                    <input
-                      type="email"
-                      name="clientEmail"
-                      value={formData.clientEmail}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{ticket.client_email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">phone</label>
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      name="clientPhone"
-                      value={formData.clientPhone}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{ticket.client_phone}</p>
-                  )}
-                </div>
-
-                <div className="md:col-span-2 flex items-center gap-4 mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Waiting Client</label>
-                  {isEditing ? (
-                    <input
-                      type="checkbox"
-                      name="waitingClient"
-                      checked={formData.waitingClient}
-                      onChange={handleChange}
-                      className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                  ) : (
-                    <span className="ml-2 text-gray-900 font-semibold">{formData.waitingClient ? 'yes' : 'No'}</span>
-                  )}
+              {/* Client Information */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client Information</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Name */}
+                  <div>
+                    <span className="font-medium">Name:</span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="client"
+                        value={formData.client}
+                        onChange={handleChange}
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black mt-1"
+                      />
+                    ) : (
+                      <span className="ml-2">{ticket.client || '--'}</span>
+                    )}
+                  </div>
+                  {/* Email */}
+                  <div>
+                    <span className="font-medium">Email:</span>
+                    {isEditing ? (
+                      <input
+                        type="email"
+                        name="clientEmail"
+                        value={formData.clientEmail}
+                        onChange={handleChange}
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black mt-1"
+                      />
+                    ) : (
+                      <span className="ml-2">{ticket.client_email || '--'}</span>
+                    )}
+                  </div>
+                  {/* Phone */}
+                  <div>
+                    <span className="font-medium">Phone:</span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="clientPhone"
+                        value={formData.clientPhone}
+                        onChange={handleChange}
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black mt-1"
+                      />
+                    ) : (
+                      <span className="ml-2">{ticket.client_phone || '--'}</span>
+                    )}
+                  </div>
+                  {/* Station */}
+                  <div>
+                    <span className="font-medium">Station:</span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="station"
+                        value={formData.station}
+                        onChange={handleChange}
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black mt-1"
+                      />
+                    ) : (
+                      <span className="ml-2">{ticket.station || '--'}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="border-t pt-6">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">Resolution comment</h2>
-              {isEditing ? (
-                <textarea
-                  name="resolutionComment"
-                  value={formData.resolutionComment}
-                  onChange={handleChange}
-                  rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="add resolution comment"
-                />
-              ) : (
-                <p className="text-gray-900 whitespace-pre-wrap">{ticket.resolution_comment || <span className='text-gray-400'>Aucun commentaire</span>}</p>
-              )}
+              <h2 className="text-xl font-semibold mb-4 text-blue-800">Comments</h2>
+              {/* Comments List */}
+              <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="font-medium text-gray-900">{comment.user_email}</div>
+                      <div className="text-sm text-gray-500">
+                        {formatDate(comment.created_at)}
+                      </div>
+                    </div>
+                    <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                  </div>
+                ))}
+                <div ref={commentsEndRef} />
+              </div>
+
+              {/* Comment Form */}
+              <div className="mt-4">
+                <div className="flex gap-4">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="add comment"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm resize-none text-black"
+                    rows="3"
+                  />
+                  <button
+                    onClick={handleAddComment}
+                    disabled={isSubmittingComment || !newComment.trim()}
+                    className={`px-4 py-2 rounded-lg text-white ${
+                      isSubmittingComment || !newComment.trim()
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    } transition-colors duration-200 flex items-center gap-2`}
+                  >
+                    {isSubmittingComment ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Envoi...
+                      </>
+                    ) : (
+                      'send'
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Files Section */}
@@ -449,7 +503,7 @@ export default function TicketDetails({ ticket }) {
                             <div key={index} className="flex items-center gap-2 p-2 bg-white rounded-lg shadow">
                               {getFileIcon(file)}
                               <span className="text-sm text-gray-700 truncate">
-                                {file.name || file.filename || `File ${index + 1}`}
+                                {file.name || file.filename || (file.url ? file.url.split('/').pop() : `File ${index + 1}`)}
                               </span>
                               {file.size && (
                                 <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
@@ -509,7 +563,7 @@ export default function TicketDetails({ ticket }) {
                         >
                           {getFileIcon(file)}
                           <span className="text-sm text-gray-700 truncate">
-                            {file.name || file.filename || `File ${index + 1}`}
+                            {file.name || file.filename || (file.url ? file.url.split('/').pop() : `File ${index + 1}`)}
                           </span>
                           {file.size && (
                             <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
@@ -531,6 +585,23 @@ export default function TicketDetails({ ticket }) {
                   )
                 )}
               </div>
+            </div>
+
+            {/* Resolution Note */}
+            <div className="border-t pt-6 mt-8">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Resolution Note</h2>
+              {isEditing ? (
+                <textarea
+                  name="resolutionComment"
+                  value={formData.resolutionComment}
+                  onChange={handleChange}
+                  rows="3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+                  placeholder="add resolution comment"
+                />
+              ) : (
+                <p className="text-gray-900 whitespace-pre-wrap">{ticket.resolution_comment || <span className='text-gray-400'>Aucun commentaire</span>}</p>
+              )}
             </div>
 
             {isEditing && (
@@ -563,60 +634,6 @@ export default function TicketDetails({ ticket }) {
           </form>
 
           <hr className="my-8 border-t-2 border-gray-200" />
-
-          {/* Comments Section - Outside the main form */}
-          <div className="border border-blue-100 bg-blue-50 rounded-xl p-6 mt-4 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4 text-blue-800">Commentaires</h2>
-            {/* Comments List */}
-            <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
-              {comments.map((comment) => (
-                <div key={comment.id} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="font-medium text-gray-900">{comment.user_email}</div>
-                    <div className="text-sm text-gray-500">
-                      {formatDate(comment.created_at)}
-                    </div>
-                  </div>
-                  <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
-                </div>
-              ))}
-              <div ref={commentsEndRef} />
-            </div>
-
-            {/* Comment Form */}
-            <div className="mt-4">
-              <div className="flex gap-4">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="add comment"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm resize-none text-black"
-                  rows="3"
-                />
-                <button
-                  onClick={handleAddComment}
-                  disabled={isSubmittingComment || !newComment.trim()}
-                  className={`px-4 py-2 rounded-lg text-white ${
-                    isSubmittingComment || !newComment.trim()
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } transition-colors duration-200 flex items-center gap-2`}
-                >
-                  {isSubmittingComment ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Envoi...
-                    </>
-                  ) : (
-                    'send'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -646,7 +663,9 @@ export default function TicketDetails({ ticket }) {
                 <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                <p className="mt-4 text-gray-600">Preview not available</p>
+                <p className="mt-4 text-gray-600 font-semibold">
+                  {selectedFile.name || selectedFile.filename || (selectedFile.url ? selectedFile.url.split('/').pop() : 'File')}
+                </p>
                 <a 
                   href={formatFileUrl(selectedFile.url)} 
                   target="_blank" 

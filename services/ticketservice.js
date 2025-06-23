@@ -23,13 +23,13 @@ export function getClientToken() {
 }
 
 /**
- * Récupère toutes les informations d'un ticket par son ID
+ * Retrieves all information for a ticket by its ID
  * @param {string|number} ticketId
  * @param {string} token
- * @returns {Promise<Object>} Les informations du ticket
+ * @returns {Promise<Object>} Ticket information
  */
 export async function getTicketById(ticketId, token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
 
   try {
     const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
@@ -42,7 +42,7 @@ export async function getTicketById(ticketId, token) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "Erreur lors de la récupération du ticket.");
+      throw new Error(errorData.error || "Error while retrieving the ticket.");
     }
 
     const data = await response.json();
@@ -55,16 +55,16 @@ export async function getTicketById(ticketId, token) {
       }));
     }
 
-    console.log('Ticket récupéré:', data);
+    console.log('Ticket retrieved:', data);
     return data;
   } catch (error) {
-    console.error('Erreur backend:', error);
+    console.error('Backend error:', error);
     throw error;
   }
 }
 
 export async function getAllTickets(token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/tickets`, {
       headers: {
@@ -72,16 +72,16 @@ export async function getAllTickets(token) {
       },
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de la récupération des tickets.');
+    if (!response.ok) throw new Error('Error while retrieving tickets.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function updateTicket(ticketId, ticketData, token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
       method: 'PUT',
@@ -92,16 +92,16 @@ export async function updateTicket(ticketId, ticketData, token) {
       body: JSON.stringify(ticketData),
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de la mise à jour du ticket.');
+    if (!response.ok) throw new Error('Error while updating the ticket.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function uploadTicketImage(imageFile, token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   const formData = new FormData();
   formData.append('image', imageFile);
   try {
@@ -113,22 +113,22 @@ export async function uploadTicketImage(imageFile, token) {
       body: formData,
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de l\'upload de l\'image.');
+    if (!response.ok) throw new Error('Error while uploading the image.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function uploadTicketFiles(files, token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   const formData = new FormData();
   files.forEach(file => formData.append('files', file));
   
   try {
-    console.log('Tentative d\'upload vers:', `${API_URL}/tickets/upload`);
-    console.log('Token utilisé:', token);
+    console.log('Attempting upload to:', `${API_URL}/tickets/upload`);
+    console.log('Token used:', token);
     
     const response = await fetch(`${API_URL}/tickets/upload`, {
       method: 'POST',
@@ -139,47 +139,47 @@ export async function uploadTicketFiles(files, token) {
       cache: 'no-store',
     });
 
-    console.log('Status de la réponse:', response.status);
-    console.log('Headers de la réponse:', Object.fromEntries(response.headers.entries()));
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('text/html')) {
-        console.error('Le serveur a renvoyé du HTML au lieu du JSON attendu');
-        throw new Error('Le serveur n\'est pas accessible. Veuillez vérifier que le serveur backend est en cours d\'exécution.');
+        console.error('The server returned HTML instead of the expected JSON');
+        throw new Error('The server is not accessible. Please check that the backend server is running.');
       }
       
       let errorMessage;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.error || 'Erreur lors de l\'upload des fichiers.';
+        errorMessage = errorData.error || 'Error while uploading files.';
       } catch (e) {
-        errorMessage = `Erreur serveur (${response.status}): ${response.statusText}`;
+        errorMessage = `Server error (${response.status}): ${response.statusText}`;
       }
       throw new Error(errorMessage);
     }
 
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      console.error('Type de contenu inattendu:', contentType);
-      throw new Error('Réponse invalide du serveur');
+      console.error('Unexpected content type:', contentType);
+      throw new Error('Invalid server response');
     }
 
     const result = await response.json();
-    console.log('Réponse du serveur:', result);
+    console.log('Server response:', result);
     
     // Ajouter l'URL de base aux fichiers retournés
     return result.urls.map(url => ({
       url: `${API_URL}${url}`
     }));
   } catch (error) {
-    console.error('Erreur détaillée:', error);
+    console.error('Detailed error:', error);
     throw error;
   }
 }
 
 export async function sendTicketToBackend(ticketData, token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/tickets`, {
       method: 'POST',
@@ -190,16 +190,16 @@ export async function sendTicketToBackend(ticketData, token) {
       body: JSON.stringify(ticketData),
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de la création du ticket.');
+    if (!response.ok) throw new Error('Error while creating the ticket.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function getTicketsByStation(token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/stats/tickets-by-station`, {
       headers: {
@@ -207,16 +207,16 @@ export async function getTicketsByStation(token) {
       },
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de la récupération des statistiques par station.');
+    if (!response.ok) throw new Error('Error while retrieving statistics by station.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function getIncidentsByPriority(token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/stats/incidents-by-priority`, {
       headers: {
@@ -224,16 +224,16 @@ export async function getIncidentsByPriority(token) {
       },
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de la récupération des incidents par priorité.');
+    if (!response.ok) throw new Error('Error while retrieving incidents by priority.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function getNocOsticketCategories(token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/stats/noc-osticket-categories`, {
       headers: {
@@ -241,16 +241,16 @@ export async function getNocOsticketCategories(token) {
       },
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de la récupération des catégories NOC Osticket.');
+    if (!response.ok) throw new Error('Error while retrieving NOC Osticket categories.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function getIncidentsByStatus(token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/stats/incidents-by-status`, {
       headers: {
@@ -258,16 +258,16 @@ export async function getIncidentsByStatus(token) {
       },
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de la récupération des incidents par statut.');
+    if (!response.ok) throw new Error('Error while retrieving incidents by status.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function getTicketComments(ticketId, token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/tickets/${ticketId}/comments`, {
       method: 'GET',
@@ -276,16 +276,16 @@ export async function getTicketComments(ticketId, token) {
       },
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de la récupération des commentaires.');
+    if (!response.ok) throw new Error('Error while retrieving comments.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur backend:', error);
+    console.error('Backend error:', error);
     throw error;
   }
 }
 
 export async function addTicketComment(ticketId, content, token) {
-  if (!token) throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+  if (!token) throw new Error("No authentication token found. Please log in again.");
   try {
     const response = await fetch(`${API_URL}/tickets/${ticketId}/comments`, {
       method: 'POST',
@@ -296,10 +296,10 @@ export async function addTicketComment(ticketId, content, token) {
       body: JSON.stringify({ content }),
       cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Erreur lors de l\'ajout du commentaire.');
+    if (!response.ok) throw new Error('Error while adding comment.');
     return await response.json();
   } catch (error) {
-    console.error('Erreur backend:', error);
+    console.error('Backend error:', error);
     throw error;
   }
 }

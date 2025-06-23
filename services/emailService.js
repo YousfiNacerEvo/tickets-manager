@@ -1,10 +1,10 @@
 const API_URL ='https://gestion-ticket-back-78nj.onrender.com';
 const API_URL_LOCAL = "http://localhost:10000";
 
-export const sendTicketNotificationEmail = async (ticketId, userEmail, token) => {
+export const sendTicketNotificationEmail = async (ticketId, userEmail, token, message) => {
   try {
     if (!ticketId || !userEmail) {
-      throw new Error('Ticket ID et email utilisateur requis');
+      throw new Error('Ticket ID and user email required');
     }
 
     const response = await fetch(`${API_URL}/api/send-ticket`, {
@@ -13,18 +13,18 @@ export const sendTicketNotificationEmail = async (ticketId, userEmail, token) =>
         'Content-Type': 'application/json',
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ ticketId, userEmail }),
+      body: JSON.stringify({ ticketId, userEmail, message }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Erreur lors de l\'envoi de l\'email');
+      throw new Error(data.message || 'Error while sending email');
     }
 
     return data;
   } catch (error) {
-    console.error('Erreur lors de l\'envoi de l\'email:', error);
+    console.error('Error while sending email:', error);
     throw error;
   }
 }; 

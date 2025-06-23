@@ -94,7 +94,7 @@ export default function DashboardCharts({ stats }) {
     labels: stats.nocOsticketCategories.map(item => item.category),
     datasets: [
       {
-        label: 'total de tickets',
+        label: 'total tickets',
         data: stats.nocOsticketCategories.map(item => item.count),
         backgroundColor: '#1B2D2F',
         borderColor: '#1B2D2F',
