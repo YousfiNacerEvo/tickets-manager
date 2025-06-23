@@ -129,6 +129,7 @@ export default function ReportingPage() {
     try {
       const workbook = XLSX.utils.book_new();
 
+      // Feuille 1: Tickets par Client
       const ticketsByStationWS = XLSX.utils.json_to_sheet(
         dashboardStats.ticketsByStation.map(item => ({
           'Client': item.station,
@@ -137,6 +138,7 @@ export default function ReportingPage() {
       );
       XLSX.utils.book_append_sheet(workbook, ticketsByStationWS, 'Tickets par Client');
 
+      // Feuille 2: Tickets par Priorité
       const priorityOrder = ["low", "medium", "high"];
       const priorityData = priorityOrder.map(priority => ({
         'Priorité': priority,
@@ -145,6 +147,7 @@ export default function ReportingPage() {
       const priorityWS = XLSX.utils.json_to_sheet(priorityData);
       XLSX.utils.book_append_sheet(workbook, priorityWS, 'Tickets par Priorité');
 
+      // Feuille 3: Tickets par Station
       const stationData = dashboardStats.nocOsticketCategories.map(item => ({
         'Station': item.category,
         'Nombre de Tickets': item.count
@@ -152,6 +155,7 @@ export default function ReportingPage() {
       const stationWS = XLSX.utils.json_to_sheet(stationData);
       XLSX.utils.book_append_sheet(workbook, stationWS, 'Tickets par Station');
 
+      // Feuille 4: Tickets par Statut
       const statusOrder = ["open", "closed", "in_progress"];
       const statusData = statusOrder.map(status => ({
         'Statut': status,
