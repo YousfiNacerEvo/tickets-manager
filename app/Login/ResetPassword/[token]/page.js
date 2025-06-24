@@ -19,7 +19,7 @@ export default function ResetPasswordWithToken({ params }) {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.');
+      setError('Passwords do not match.');
       setIsLoading(false);
       return;
     }
@@ -36,15 +36,15 @@ export default function ResetPasswordWithToken({ params }) {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('Votre mot de passe a été réinitialisé avec succès.');
+        setMessage('Your password has been successfully reset.');
         setTimeout(() => {
           router.push('/Login');
         }, 3000);
       } else {
-        setError(data.error || 'Une erreur est survenue lors de la réinitialisation du mot de passe.');
+        setError(data.error || 'An error occurred while resetting the password.');
       }
     } catch (error) {
-      setError('Une erreur est survenue lors de la communication avec le serveur.');
+      setError('An error occurred while communicating with the server.');
     } finally {
       setIsLoading(false);
     }
@@ -55,17 +55,17 @@ export default function ResetPasswordWithToken({ params }) {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Réinitialisation du mot de passe
+            Reset Password
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Entrez votre nouveau mot de passe
+            Enter your new password
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="password" className="sr-only">
-                Nouveau mot de passe
+                New password
               </label>
               <input
                 id="password"
@@ -75,12 +75,12 @@ export default function ResetPasswordWithToken({ params }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Nouveau mot de passe"
+                placeholder="New password"
               />
             </div>
             <div>
               <label htmlFor="confirm-password" className="sr-only">
-                Confirmer le mot de passe
+                Confirm password
               </label>
               <input
                 id="confirm-password"
@@ -90,7 +90,7 @@ export default function ResetPasswordWithToken({ params }) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Confirmer le mot de passe"
+                placeholder="Confirm password"
               />
             </div>
           </div>
@@ -141,13 +141,13 @@ export default function ResetPasswordWithToken({ params }) {
                   </svg>
                 </span>
               ) : null}
-              {isLoading ? 'Réinitialisation en cours...' : 'Réinitialiser le mot de passe'}
+              {isLoading ? 'Resetting password...' : 'Reset password'}
             </button>
           </div>
 
           <div className="text-sm text-center">
             <Link href="/Login" className="font-medium text-blue-600 hover:text-blue-500">
-              Retour à la connexion
+              Return to login
             </Link>
           </div>
         </form>

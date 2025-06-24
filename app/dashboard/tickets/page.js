@@ -40,7 +40,7 @@ export default function TicketsListPage() {
         });
         setTickets(sortedTickets);
       } catch (err) {
-        console.error('Erreur TicketsListPage:', err);
+        console.error('Error TicketsListPage:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -90,15 +90,11 @@ export default function TicketsListPage() {
   const formatDate = (dateString) => {
     if (!dateString) return '--';
     try {
-      // Convertir la date UTC en objet Date
+      // Convert UTC date to Date object
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return '--';
-      
-      // Soustraire une heure pour corriger le décalage UTC+1
-      date.setHours(date.getHours());
-      
-      // Formater la date en heure locale
-      return date.toLocaleString('fr-FR', {
+      // No UTC+1 correction
+      return date.toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -106,7 +102,7 @@ export default function TicketsListPage() {
         minute: '2-digit'
       });
     } catch (error) {
-      console.error('Erreur de formatage de date:', error);
+      console.error('Date formatting error:', error);
       return '--';
     }
   };
@@ -142,6 +138,14 @@ export default function TicketsListPage() {
     router.push(`/dashboard/tickets/${ticketId}`);
   };
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-red-500">
+        Error: {error}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen relative">
       {/* Background pattern */}
@@ -176,7 +180,6 @@ export default function TicketsListPage() {
             <TicketSearchBar filters={filters} setFilters={setFilters} />
           </div>
           {loading && <div className="text-center text-gray-500">Loading...</div>}
-          {error && <div className="text-center text-red-500">{error}</div>}
           {!loading && !error && currentTickets.length === 0 && (
             <div className="text-center text-gray-400">No tickets found.</div>
           )}
@@ -191,12 +194,12 @@ export default function TicketsListPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waiting Client</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of creation</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of closur</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of closure</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created by</th>
                     </tr>
                   </thead>

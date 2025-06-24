@@ -465,7 +465,7 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: userEmail,
-      subject: message ? 'Ticket Status Update' : 'Nouveau ticket créé',
+      subject: message ? 'Ticket Status Update' : 'New ticket has been created ',
       html: message
         ? `<p>${message}</p>`
         : `

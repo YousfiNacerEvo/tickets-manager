@@ -14,10 +14,10 @@ export default async function TicketPage({ params }) {
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-5xl mx-auto">
           <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
-            <h1 className="text-2xl font-bold text-red-600">Authentification requise</h1>
-            <p className="mt-2 text-gray-600">Vous devez vous connecter pour accéder à ce ticket.</p>
-            <p className="mt-2 text-gray-600">Après votre connexion, vous serez automatiquement redirigé vers ce ticket.</p>
-            <Link href={`/Login?redirectTo=${encodeURIComponent(ticketUrl)}`} className="text-blue-600 hover:underline mt-4 inline-block">Se connecter</Link>
+            <h1 className="text-2xl font-bold text-red-600">Authentication required</h1>
+            <p className="mt-2 text-gray-600">You must be logged in to access this ticket.</p>
+            <p className="mt-2 text-gray-600">After logging in, you will be automatically redirected to this ticket.</p>
+            <Link href={`/Login?redirectTo=${encodeURIComponent(ticketUrl)}`} className="text-blue-600 hover:underline mt-4 inline-block">Log in</Link>
           </div>
         </div>
       </div>
@@ -32,9 +32,9 @@ export default async function TicketPage({ params }) {
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-5xl mx-auto">
           <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
-            <h1 className="text-2xl font-bold text-red-600">Erreur</h1>
+            <h1 className="text-2xl font-bold text-red-600">Error</h1>
             <p className="mt-2 text-gray-600">{error.message}</p>
-            <Link href="/dashboard/tickets" className="text-blue-600 hover:underline mt-4 inline-block">Retour à la liste des tickets</Link>
+            <Link href="/dashboard/tickets" className="text-blue-600 hover:underline mt-4 inline-block">Back to ticket list</Link>
           </div>
         </div>
       </div>

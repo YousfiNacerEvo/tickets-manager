@@ -69,7 +69,7 @@ export default function LoginPageInner() {
 
   return (
     <div className="bg-gray-100">
-     <div className=" text-center bg-gray-100 mt-8">
+     <div className=" text-center bg-gray-100 mt-2">
         <div className="flex justify-center mb-2">
           <Image
             src="/logo.png"

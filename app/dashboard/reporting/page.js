@@ -406,7 +406,7 @@ export default function ReportingPage() {
                 </div>
               </div>
             ) : (
-              <div className="text-gray-800">Aucune donnée disponible</div>
+              <div className="text-gray-800">No data</div>
             )}
           </CardContent>
         </Card>
@@ -418,7 +418,7 @@ export default function ReportingPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-gray-800">Chargement...</div>
+            <div className="text-gray-800">loading...</div>
           ) : reportData?.tickets ? (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -449,7 +449,7 @@ export default function ReportingPage() {
               </table>
             </div>
           ) : (
-            <div className="text-gray-800">Aucun ticket trouvé</div>
+            <div className="text-gray-800">No data</div>
           )}
         </CardContent>
       </Card>

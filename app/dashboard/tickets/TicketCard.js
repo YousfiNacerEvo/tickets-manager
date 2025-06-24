@@ -22,7 +22,7 @@ export default function TicketCard({ ticket }) {
       )}
       <div className="flex flex-wrap justify-between items-center mb-2">
         <div className="font-bold text-lg text-blue-700">#{ticket.id}</div>
-        <div className="text-xs text-gray-500">Créé le {ticket.updated_at ? (() => {
+        <div className="text-xs text-gray-500">Created on {ticket.updated_at ? (() => {
           const date = new Date(ticket.updated_at);
           date.setHours(date.getHours() ); // Soustraire une heure pour corriger le décalage UTC+1
           return date.toLocaleString('fr-FR', {
@@ -42,7 +42,7 @@ export default function TicketCard({ ticket }) {
         {ticket.waitingClient && <span className="px-2 py-1 rounded bg-pink-100 text-pink-700 text-xs font-semibold">Waiting client</span>}
       </div>
       <div className="text-sm text-gray-600 mb-1">
-        <span className="font-medium">Client :</span> {ticket.client_first_name} {ticket.client_last_name} | {ticket.client_email} | {ticket.client_phone}
+        <span className="font-medium">Client:</span> {ticket.client_first_name} {ticket.client_last_name} | {ticket.client_email} | {ticket.client_phone}
       </div>
       {ticket.image && (
         <div className="mt-2">
@@ -50,7 +50,7 @@ export default function TicketCard({ ticket }) {
         </div>
       )}
       {ticket.user_id && (
-        <div className="text-xs text-gray-500 mt-2">Créé par : {ticket.user_email}</div>
+        <div className="text-xs text-gray-500 mt-2">Created by: {ticket.user_email}</div>
       )}
     </div>
   );

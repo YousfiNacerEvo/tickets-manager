@@ -49,7 +49,7 @@ export default function Dashboard() {
       try {
         const token = getClientToken();
         if (!token) {
-          throw new Error("Aucun token d'authentification trouvé. Veuillez vous reconnecter.");
+          throw new Error("No authentication token found. Please log in again.");
         }
 
         const [
