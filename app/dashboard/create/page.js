@@ -133,14 +133,30 @@ export default function CreateTicket() {
       const ticketId = Array.isArray(backendResponse) ? backendResponse[0]?.id : backendResponse?.id;
       if (!ticketId) throw new Error("Unable to retrieve the created ticket ID");
       
-      // Send notification email
+      // Send notification email to client
       if (ticket.clientEmail) {
         try {
-          await sendTicketNotificationEmail(ticketId, ticket.clientEmail, token);
+          await sendTicketNotificationEmail(
+            ticketId,
+            ticket.clientEmail,
+            token,
+            "Your ticket has been created. We will keep you updated on its progress."
+          );
         } catch (emailError) {
-          console.error('Error while sending email:', emailError);
-          // Continue with success message even if email fails
+          console.error('Error while sending email to client:', emailError);
         }
+      }
+      // Send notification email to admin
+      try {
+        const creatorEmail = getCreatorEmail();
+        await sendTicketNotificationEmail(
+          ticketId,
+          "naceryousfi007@gmail.com",
+          token,
+          `A new ticket has been created by ${creatorEmail}.<br>You can view the ticket here: <a href=\"https://tickets-manager-kappa.vercel.app/dashboard/tickets/${ticketId}\">View Ticket</a>`
+        );
+      } catch (emailError) {
+        console.error('Error while sending email to admin:', emailError);
       }
       
       setMessage({ type: 'success', text: 'Ticket created successfully!' });
@@ -153,6 +169,22 @@ export default function CreateTicket() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getCreatorEmail = () => {
+    if (typeof window !== 'undefined') {
+      const user = localStorage.getItem('user');
+      if (user) {
+        try {
+          const parsed = JSON.parse(user);
+          if (parsed && parsed.email) return parsed.email;
+          if (typeof parsed === 'string') return parsed;
+        } catch {
+          if (typeof user === 'string') return user;
+        }
+      }
+    }
+    return 'unknown';
   };
 
   return (
