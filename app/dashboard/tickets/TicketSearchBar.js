@@ -28,7 +28,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
   const showCustomClient = filters.client === 'other';
 
   return (
-    <div className="bg-white/90 border border-gray-200 rounded-xl shadow-sm p-3 mb-4 w-full max-w-2xl mx-auto text-black">
+    <div className="bg-white/90 border border-gray-200 rounded-xl shadow-sm p-3 mb-4 w-full max-w-none text-black">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-base font-bold text-blue-900 flex items-center gap-2">
           <svg className="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
@@ -41,8 +41,8 @@ export default function TicketSearchBar({ filters, setFilters }) {
           Reset
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <div>
+      <div className="flex flex-col md:flex-row md:flex-wrap gap-2">
+        <div className="flex-1 min-w-[140px] max-w-xs">
           <label className="block text-xs font-semibold text-gray-700 mb-1">Ticket ID</label>
           <input
             type="text"
@@ -52,7 +52,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
             placeholder="ID"
           />
         </div>
-        <div>
+        <div className="flex-1 min-w-[140px] max-w-xs">
           <label className="block text-xs font-semibold text-gray-700 mb-1">Client</label>
           {!showCustomClient ? (
             <select
@@ -84,7 +84,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
             </>
           )}
         </div>
-        <div>
+        <div className="flex-1 min-w-[140px] max-w-xs">
           <label className="block text-xs font-semibold text-gray-700 mb-1">Station</label>
           <select
             value={filters.station || ''}
@@ -99,7 +99,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
             ))}
           </select>
         </div>
-        <div>
+        <div className="flex-1 min-w-[140px] max-w-xs">
           <label className="block text-xs font-semibold text-gray-700 mb-1">Status</label>
           <select
             value={filters.status || ''}
@@ -112,7 +112,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
             <option value="closed">Closed</option>
           </select>
         </div>
-        <div>
+        <div className="flex-1 min-w-[140px] max-w-xs">
           <label className="block text-xs font-semibold text-gray-700 mb-1">Priority</label>
           <select
             value={filters.priority || ''}
@@ -125,7 +125,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
             <option value="high">High</option>
           </select>
         </div>
-        <div>
+        <div className="flex-1 min-w-[140px] max-w-xs">
           <label className="block text-xs font-semibold text-gray-700 mb-1">Type</label>
           <select
             value={filters.type || ''}
@@ -137,7 +137,7 @@ export default function TicketSearchBar({ filters, setFilters }) {
             <option value="incident">Incident</option>
           </select>
         </div>
-        <div>
+        <div className="flex-1 min-w-[140px] max-w-xs">
           <label className="block text-xs font-semibold text-gray-700 mb-1">Created by (email)</label>
           <input
             type="text"
