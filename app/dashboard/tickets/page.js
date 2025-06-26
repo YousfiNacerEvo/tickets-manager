@@ -62,7 +62,7 @@ export default function TicketsListPage() {
 
   const filteredTickets = tickets.filter(ticket => {
     const matchId = filters.id ? String(ticket.id).includes(filters.id) : true;
-    const matchClient = filters.client ? ticket.client === filters.client : true;
+    const matchClient = (filters.client && filters.client !== 'other') ? ticket.client === filters.client : true;
     const matchClientCustom = filters.clientCustom ? (ticket.client || '').toLowerCase().includes(filters.clientCustom.toLowerCase()) : true;
     const matchStation = filters.station ? ticket.station === filters.station : true;
     const matchStatus = filters.status ? ticket.status === filters.status : true;
