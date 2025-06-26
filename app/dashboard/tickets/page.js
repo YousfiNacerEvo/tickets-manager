@@ -16,7 +16,8 @@ export default function TicketsListPage() {
     status: '', 
     priority: '', 
     type: '',
-    user_email: ''
+    user_email: '',
+    clientCustom: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [loadingTicketId, setLoadingTicketId] = useState(null);
@@ -62,12 +63,13 @@ export default function TicketsListPage() {
   const filteredTickets = tickets.filter(ticket => {
     const matchId = filters.id ? String(ticket.id).includes(filters.id) : true;
     const matchClient = filters.client ? ticket.client === filters.client : true;
+    const matchClientCustom = filters.clientCustom ? (ticket.client || '').toLowerCase().includes(filters.clientCustom.toLowerCase()) : true;
     const matchStation = filters.station ? ticket.station === filters.station : true;
     const matchStatus = filters.status ? ticket.status === filters.status : true;
     const matchPriority = filters.priority ? ticket.priority === filters.priority : true;
     const matchType = filters.type ? ticket.type === filters.type : true;
     const matchUserEmail = filters.user_email ? (ticket.user_email || '').toLowerCase().includes(filters.user_email.toLowerCase()) : true;
-    return matchId && matchClient && matchStation && matchStatus && matchPriority && matchType && matchUserEmail;
+    return matchId && matchClient && matchClientCustom && matchStation && matchStatus && matchPriority && matchType && matchUserEmail;
   });
 
   const indexOfLastTicket = currentPage * ticketsPerPage;

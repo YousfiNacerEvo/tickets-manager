@@ -68,8 +68,8 @@ export default function LoginPageInner() {
   };
 
   return (
-    <div className="bg-gray-100">
-     <div className=" text-center bg-gray-100 mt-2">
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-100 via-white to-blue-200 overflow-hidden">
+      <div className="text-center bg-transparent mt-2">
         <div className="flex justify-center mb-2">
           <Image
             src="/logo.png"
@@ -79,10 +79,8 @@ export default function LoginPageInner() {
             className="object-contain"
           />
         </div>
-        
       </div>
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-       
+      <div className="min-h-screen flex items-center justify-center bg-transparent relative z-10">
         <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-sm">
           <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">
             Login
