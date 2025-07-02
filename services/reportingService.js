@@ -14,7 +14,7 @@ export async function fetchReportingData({ startDate, endDate, status, type, ass
 
   const response = await fetch(`${API_URL}/api/reporting?${queryParams}`);
   if (!response.ok) {
-    throw new Error('Erreur lors de la récupération des données');
+    throw new Error('Error while fetching data');
   }
   return response.json();
 } 

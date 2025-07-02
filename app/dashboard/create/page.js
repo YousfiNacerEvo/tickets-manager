@@ -140,7 +140,7 @@ export default function CreateTicket() {
             ticketId,
             ticket.clientEmail,
             token,
-            "Your ticket has been created. We will keep you updated on its progress."
+            `Your ticket has been created successfully. Your ticket ID is: <b>${ticketId}</b>. We will keep you updated on its progress.`
           );
         } catch (emailError) {
           console.error('Error while sending email to client:', emailError);
@@ -151,9 +151,9 @@ export default function CreateTicket() {
         const creatorEmail = getCreatorEmail();
         await sendTicketNotificationEmail(
           ticketId,
-          "support@asbumenos.net",
+          "zenshin008@gmail.com",//support@asbumenos.net
           token,
-          `A new ticket has been created by ${creatorEmail}.<br>You can view the ticket here: <a href=\"https://tickets-manager-kappa.vercel.app/dashboard/tickets/${ticketId}\">View Ticket</a>`
+          `A new ticket (ID: <b>${ticketId}</b>) has been created by ${creatorEmail}.<br>You can view the ticket here: <a href=\"https://tickets-manager-kappa.vercel.app/dashboard/tickets/${ticketId}\">View Ticket</a>`
         );
       } catch (emailError) {
         console.error('Error while sending email to admin:', emailError);

@@ -83,6 +83,13 @@ export default function Sidebar() {
         ))}
       </nav>
       <button
+        onClick={() => router.push('/dashboard/help')}
+        className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition mb-2"
+      >
+        <span className="text-lg"><FaHome /></span>
+        <span>Help</span>
+      </button>
+      <button
         onClick={handleLogout}
         className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 transition mt-4"
       >

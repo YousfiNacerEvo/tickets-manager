@@ -20,8 +20,6 @@ import {
   Legend,
 } from 'chart.js';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import "../../globals.css"
@@ -36,6 +34,7 @@ import {
 } from '@/services/ticketservice';
 import DashboardCharts from '../components/DashboardCharts';
 import { useRouter } from 'next/navigation';
+import Chart from 'chart.js/auto';
 
 ChartJS.register(
   CategoryScale,
@@ -46,8 +45,62 @@ ChartJS.register(
   Legend
 );
 
+function toLocalDateString(date) {
+  if (!date) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function buildReportingStats(reportData) {
+  if (!reportData) return null;
+  // Générer le même format que dashboardStats mais à partir de reportData filtré
+  // Tickets By Client
+  const ticketsByStation = [];
+  const stationMap = {};
+  reportData.tickets.forEach(ticket => {
+    if (!stationMap[ticket.client]) stationMap[ticket.client] = 0;
+    stationMap[ticket.client]++;
+  });
+  for (const station in stationMap) {
+    ticketsByStation.push({ station, count: stationMap[station] });
+  }
+  // Tickets By Priority
+  const incidentsByPriority = [];
+  const priorityOrder = ["low", "medium", "high"];
+  priorityOrder.forEach(priority => {
+    const count = reportData.tickets.filter(ticket => (ticket.priority || ticket.type) === priority).length;
+    incidentsByPriority.push({ priority, count });
+  });
+  // Tickets By Station (catégorie)
+  const nocOsticketCategories = [];
+  const catMap = {};
+  reportData.tickets.forEach(ticket => {
+    if (!catMap[ticket.station]) catMap[ticket.station] = 0;
+    catMap[ticket.station]++;
+  });
+  for (const category in catMap) {
+    nocOsticketCategories.push({ category, count: catMap[category] });
+  }
+  // Tickets By Status
+  const incidentsByStatus = [];
+  const statusOrder = ["open", "closed", "in_progress"];
+  statusOrder.forEach(status => {
+    const count = reportData.tickets.filter(ticket => ticket.status === status).length;
+    incidentsByStatus.push({ status, count });
+  });
+  return {
+    ticketsByStation,
+    incidentsByPriority,
+    nocOsticketCategories,
+    incidentsByStatus
+  };
+}
+
 export default function ReportingPage() {
-  const [date, setDate] = useState({ from: null, to: null });
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("");
   const [type, setType] = useState("");
   const [assignedUser, setAssignedUser] = useState("");
@@ -60,6 +113,9 @@ export default function ReportingPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const chartsRef = useRef(null);
+  const [openStart, setOpenStart] = useState(false);
+  const [openEnd, setOpenEnd] = useState(false);
+  const chartRefs = useRef({});
 
   useEffect(() => {
     const role = localStorage.getItem('role');
@@ -81,13 +137,13 @@ export default function ReportingPage() {
         if (!token) {
           throw new Error("No auth token found");
         }
-        
-        // Fetch reporting data
-        const startDate = date.from ? date.from.toISOString() : new Date().toISOString();
-        const endDate = date.to ? date.to.toISOString() : startDate;
+        // Utiliser startDate et endDate au format ISO complet pour couvrir toute la journée
+        const today = new Date();
+        const start = startDate ? `${startDate}T00:00:00Z` : today.toISOString().split('T')[0] + 'T00:00:00Z';
+        const end = endDate ? `${endDate}T23:59:59Z` : start;
         const reportingDataPromise = fetchReportingData({
-          startDate,
-          endDate,
+          startDate: start,
+          endDate: end,
           status,
           type,
           assignedUser,
@@ -120,7 +176,7 @@ export default function ReportingPage() {
       }
     };
     fetchAllData();
-  }, [isAdmin, date, status, type, assignedUser, category, groupBy]);
+  }, [isAdmin, startDate, endDate, status, type, assignedUser, category, groupBy]);
 
   if (!userChecked || !isAdmin) return null;
 
@@ -172,8 +228,11 @@ export default function ReportingPage() {
   };
 
   const exportToPDF = async () => {
-    if (!chartsRef.current) return;
     try {
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
+      const autoTableModule = await import('jspdf-autotable');
+      const autoTable = autoTableModule.default || autoTableModule;
       const pdf = new jsPDF('landscape', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 10;
@@ -199,33 +258,70 @@ export default function ReportingPage() {
       } catch (error) {
         console.error("Impossible de charger le logo pour le PDF", error);
       }
-      
-      // 2. Ajuster la taille des graphiques et améliorer la qualité
-      const graphWidth = (pageWidth - margin * 3) / 2;
-      const graphHeight = 65; // Augmentation de la hauteur pour une meilleure lisibilité
 
-      const titles = [
-        'Tickets By Client',
-        'Tickets By Priority',
-        'Tickets By Station',
-        'Tickets By Status'
+      // 2. Capturer les images des graphiques du dashboard
+      const chartImages = [
+        { title: 'Tickets By Client', ref: chartRefs.current.client },
+        { title: 'Tickets By Priority', ref: chartRefs.current.priority },
+        { title: 'Tickets By Station', ref: chartRefs.current.station },
+        { title: 'Tickets By Status', ref: chartRefs.current.status },
       ];
-      
-      const canvases = chartsRef.current.querySelectorAll('canvas');
+      const graphWidth = (pageWidth - margin * 3) / 2;
+      const graphHeight = 65;
       let i = 0;
       for (let row = 0; row < 2; row++) {
         let x = margin;
         for (let col = 0; col < 2; col++) {
-          if (i >= canvases.length) break;
+          if (i >= chartImages.length) break;
           pdf.setFontSize(12);
-          pdf.text(titles[i], x + graphWidth / 2, y + 8, { align: 'center' });
-          const imgData = canvases[i].toDataURL('image/png', 1.0);
-          pdf.addImage(imgData, 'PNG', x, y + 10, graphWidth, graphHeight);
+          pdf.text(chartImages[i].title, x + graphWidth / 2, y + 8, { align: 'center' });
+          const chartInstance = chartImages[i].ref && chartImages[i].ref.chartInstance ? chartImages[i].ref.chartInstance : chartImages[i].ref;
+          if (chartInstance && chartInstance.toBase64Image) {
+            const imgData = chartInstance.toBase64Image();
+            pdf.addImage(imgData, 'PNG', x, y + 10, graphWidth, graphHeight);
+          }
           x += graphWidth + margin;
           i++;
         }
-        y += graphHeight + 18; // Ajustement de l'espacement vertical
+        y += graphHeight + 18;
       }
+
+      // 3. Ajouter la liste des tickets
+      if (reportData && reportData.tickets && reportData.tickets.length > 0) {
+        console.log('Exemple de ticket :', reportData.tickets[0]);
+        y += 10;
+        pdf.setFontSize(14);
+        pdf.text('Tickets liste', margin, y);
+        y += 4;
+        const ticketRows = reportData.tickets.map(ticket => {
+          const dateValue = ticket.createdAt || ticket.date || ticket.created_at || ticket.updatedAt || '';
+          return [
+            ticket.id || '',
+            ticket.title || '',
+            ticket.status || '',
+            ticket.type || '',
+            ticket.client || '',
+            dateValue ? (new Date(dateValue)).toLocaleDateString() : ''
+          ];
+        });
+        pdf.autoTable({
+          head: [["ID", "Titre", "Statut", "Type", "Client", "Date"]],
+          body: ticketRows,
+          startY: y,
+          theme: 'grid',
+          headStyles: { fillColor: [21, 93, 252] },
+          styles: { fontSize: 10 },
+          margin: { left: margin, right: margin }
+        });
+      } else {
+        y += 10;
+        pdf.setFontSize(14);
+        pdf.text('Tickets liste', margin, y);
+        y += 4;
+        pdf.setFontSize(10);
+        pdf.text('Aucun ticket trouvé pour cette période.', margin, y + 6);
+      }
+
       pdf.save('dashboard-technique.pdf');
     } catch (error) {
       console.error('Erreur lors de l\'export PDF:', error);
@@ -288,13 +384,13 @@ export default function ReportingPage() {
             onClick={exportToPDF}
             className="bg-[#155DFC] hover:bg-[#3498DB] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            📄 Exporter PDF
+            📄 Export PDF
           </button>
           <button
             onClick={exportToExcel}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            📊 Exporter Excel
+            📊 Export Excel
           </button>
         </div>
       </div>
@@ -305,34 +401,61 @@ export default function ReportingPage() {
             <CardTitle className="text-gray-800">Period</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-2 text-white">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal text-white"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4 text-white" />
-                    {date.from ? (
-                      date.to ? (
-                        <>
-                          {format(date.from, "dd/MM/yyyy")} - {format(date.to, "dd/MM/yyyy")}
-                        </>
+            <div className="flex gap-4 items-center">
+              <div className="flex flex-col">
+                <label htmlFor="start-date" className="text-gray-700 text-sm mb-1">Start Date</label>
+                <Popover open={openStart} onOpenChange={setOpenStart}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal text-gray-900 bg-white border border-gray-300"
+                    >
+                      {startDate ? (
+                        format(new Date(startDate), "dd/MM/yyyy")
                       ) : (
-                        format(date.from, "dd/MM/yyyy")
-                      )
-                    ) : (
-                      <span>Select the Period</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 max-w-xs mx-auto" align="start">
-                  <CustomCalendar
-                    selected={date}
-                    onSelect={setDate}
-                  />
-                </PopoverContent>
-              </Popover>
+                        <span>Select start date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 max-w-xs mx-auto" align="start">
+                    <CustomCalendar
+                      selected={{ from: startDate ? new Date(startDate) : null, to: null }}
+                      onSelect={({ from }) => {
+                        setStartDate(from ? toLocalDateString(from) : "");
+                        setOpenStart(false);
+                      }}
+                      single={true}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex flex-col">
+                <label htmlFor="end-date" className="text-gray-700 text-sm mb-1">End Date</label>
+                <Popover open={openEnd} onOpenChange={setOpenEnd}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal text-gray-900 bg-white border border-gray-300"
+                    >
+                      {endDate ? (
+                        format(new Date(endDate), "dd/MM/yyyy")
+                      ) : (
+                        <span>Select end date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 max-w-xs mx-auto" align="start">
+                    <CustomCalendar
+                      selected={{ from: endDate ? new Date(endDate) : null, to: null }}
+                      onSelect={({ from }) => {
+                        setEndDate(from ? toLocalDateString(from) : "");
+                        setOpenEnd(false);
+                      }}
+                      single={true}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -382,29 +505,34 @@ export default function ReportingPage() {
             {loading ? (
               <div className="text-gray-800">Loading...</div>
             ) : reportData ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-gray-600">Total tickets</div>
-                    <div className="text-2xl font-bold text-gray-800">{reportData.stats.total}</div>
-                  </div>
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-gray-600">Tickets closed</div>
-                    <div className="text-2xl font-bold text-gray-800">{reportData.stats.resolved}</div>
-                  </div>
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-gray-600">Average resolution time</div>
-                    <div className="text-2xl font-bold text-gray-800">
-                      {reportData?.stats?.averageResolutionTime && reportData.stats.resolved > 0
-                        ? `${Math.round(reportData.stats.averageResolutionTime)} hours`
-                        : '0 hours'}
+              <>
+                <div className="my-8">
+                  <DashboardCharts stats={buildReportingStats(reportData)} />
+                </div>
+                <div className="space-y-4 mt-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <div className="text-sm text-gray-600">Total tickets</div>
+                      <div className="text-2xl font-bold text-gray-800">{reportData.stats.total}</div>
+                    </div>
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <div className="text-sm text-gray-600">Tickets closed</div>
+                      <div className="text-2xl font-bold text-gray-800">{reportData.stats.resolved}</div>
+                    </div>
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <div className="text-sm text-gray-600">Average resolution time</div>
+                      <div className="text-2xl font-bold text-gray-800">
+                        {reportData?.stats?.averageResolutionTime && reportData.stats.resolved > 0
+                          ? `${Math.round(reportData.stats.averageResolutionTime)} hours`
+                          : '0 hours'}
+                      </div>
                     </div>
                   </div>
+                  <div className="w-full h-[300px]">
+                    <Bar data={chartData} options={chartOptions} className="w-full h-full" />
+                  </div>
                 </div>
-                <div className="w-full h-[300px]">
-                  <Bar data={chartData} options={chartOptions} className="w-full h-full" />
-                </div>
-              </div>
+              </>
             ) : (
               <div className="text-gray-800">No data</div>
             )}
@@ -454,7 +582,7 @@ export default function ReportingPage() {
         </CardContent>
       </Card>
       <div ref={chartsRef} style={{ position: 'absolute', left: '-9999px', top: '-9999px', zIndex: -1, width: '1200px' }}>
-        {dashboardStats && <DashboardCharts stats={dashboardStats} />}
+        {reportData && <DashboardCharts stats={buildReportingStats(reportData)} chartRefs={chartRefs.current} />}
       </div>
     </div>
   );

@@ -1,13 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay, isWithinInterval, isAfter, isBefore } from "date-fns";
 
 const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export function CustomCalendar({ selected, onSelect }) {
+export function CustomCalendar({ selected, onSelect, single = false }) {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(selected?.from || new Date()));
   const [range, setRange] = useState(selected || { from: null, to: null });
 
+  useEffect(() => {
+    setRange(selected || { from: null, to: null });
+    setCurrentMonth(startOfMonth(selected?.from || new Date()));
+  }, [selected]);
+
   const handleDayClick = (day) => {
+    if (single) {
+      setRange({ from: day, to: null });
+      if (onSelect) onSelect({ from: day, to: null });
+      return;
+    }
     let newRange = { ...range };
     if (!range.from || (range.from && range.to)) {
       newRange = { from: day, to: null };

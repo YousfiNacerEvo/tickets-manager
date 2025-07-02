@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -20,7 +20,7 @@ ChartJS.register(
   Legend
 );
 
-export default function DashboardCharts({ stats }) {
+const DashboardCharts = forwardRef(({ stats, chartRefs = {} }, ref) => {
   if (!stats) {
     return null;
   }
@@ -127,27 +127,46 @@ export default function DashboardCharts({ stats }) {
       <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center w-full">
         <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Client</h2>
         <div style={{ height: '300px', width: '100%' }}>
-          <Bar options={chartOptions} data={ticketsByStationData} />
+          {ticketsByStationData.datasets[0].data.length > 0 && ticketsByStationData.datasets[0].data.some(v => v > 0) ? (
+            <Bar ref={el => chartRefs.client = el} options={chartOptions} data={ticketsByStationData} />
+          ) : (
+            <div className="text-gray-400 h-full flex items-center justify-center">Aucune donnée</div>
+          )}
         </div>
       </div>
       <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center w-full">
         <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Priority</h2>
         <div style={{ height: '300px', width: '100%' }}>
-          <Bar options={chartOptions} data={incidentsByPriorityData} />
+          {incidentsByPriorityData.datasets[0].data.length > 0 && incidentsByPriorityData.datasets[0].data.some(v => v > 0) ? (
+            <Bar ref={el => chartRefs.priority = el} options={chartOptions} data={incidentsByPriorityData} />
+          ) : (
+            <div className="text-gray-400 h-full flex items-center justify-center">Aucune donnée</div>
+          )}
         </div>
       </div>
       <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center w-full">
-        <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Station</h2>
+        <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Type Of Station
+        </h2>
         <div style={{ height: '300px', width: '100%' }}>
-          <Bar options={chartOptions} data={nocOsticketCategoriesData} />
+          {nocOsticketCategoriesData.datasets[0].data.length > 0 && nocOsticketCategoriesData.datasets[0].data.some(v => v > 0) ? (
+            <Bar ref={el => chartRefs.station = el} options={chartOptions} data={nocOsticketCategoriesData} />
+          ) : (
+            <div className="text-gray-400 h-full flex items-center justify-center">Aucune donnée</div>
+          )}
         </div>
       </div>
       <div className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center w-full">
         <h2 className="text-lg font-semibold mb-2 text-black">Tickets By Status</h2>
         <div style={{ height: '300px', width: '100%' }}>
-          <Bar options={chartOptions} data={incidentsByStatusData} />
+          {incidentsByStatusData.datasets[0].data.length > 0 && incidentsByStatusData.datasets[0].data.some(v => v > 0) ? (
+            <Bar ref={el => chartRefs.status = el} options={chartOptions} data={incidentsByStatusData} />
+          ) : (
+            <div className="text-gray-400 h-full flex items-center justify-center">Aucune donnée</div>
+          )}
         </div>
       </div>
     </div>
   );
-} 
+});
+
+export default DashboardCharts; 
