@@ -102,6 +102,66 @@ const helpTopics = [
         image: "/addUser/step3.png"
       },
     ]
+  },
+  {
+    title: "How to Update a ticket",
+    steps: [
+      {
+        text: "Step 1 – Go to “Ticket Manager” From the sidebar, navigate to: Ticket manager.",
+      },
+      {
+        text: "Step 2 – Click on the Ticket You Want to Update Find the ticket in the list and click it to open the full details view. ( Use filters or search if you have many tickets.)",
+        image: "/updateTicket/step2.png"
+      },
+      {
+        text: "Step 3 – Click on the update button ",
+        image: "/updateTicket/step3.png"
+      },
+      {
+        text: "Step 4 – Update Ticket Information",
+        image: "/updateTicket/step4.png"
+      },
+      {
+        text: "Step 5 – Save Changes After making your updates, click  “Save changes”",
+        image: "/updateTicket/step5.png"
+      },
+    ]
+  },
+  {
+    title: "How to add comment",
+    steps: [
+      {
+        text: "Step 1 – Go to “Ticket Manager From the sidebar, navigate to: Ticket manager.",
+      },
+      {
+        text: "Step 2 – Click on the Ticket You Want to comment Find the ticket in the list and click it to open the full details view. ( Use filters or search if you have many tickets.)",
+        image: "/addComment/step2.png"
+      },
+      {
+        text: "Step 3 – comment on Ticket Type your comment then click  “send” . ",
+        image: "/addComment/step3.png"
+      },
+    ]
+  },
+  {
+    title: "How to add a resolution comment ",
+    steps: [
+      {
+        text: "Step 1 – Go to “Ticket Manager” From the sidebar, navigate to: Ticket manager.",
+      },
+      {
+        text: "Step 2 – Click on the Ticket You Want to add a note to Find the ticket in the list and click it to open the full details view. ( Use filters or search if you have many tickets.)",
+        image: "/resolutionComment/step2.png"
+      },
+      {
+        text: "Step 3 – Click on the update button  ",
+        image: "/resolutionComment/step3.png"
+      },
+      {
+        text: "Step 4 – add your resolution note  located at the bottom of the page Type your resolution note  then click 'send'  ",
+        image: "/resolutionComment/step4.png"
+      },
+    ]
   }
 ];
 
