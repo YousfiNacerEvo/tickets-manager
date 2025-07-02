@@ -1,5 +1,5 @@
 "use client";
-import { FaPlus, FaList, FaUserPlus, FaChartBar, FaHome, FaSignOutAlt, FaFileAlt } from "react-icons/fa";
+import { FaPlus, FaList, FaUserPlus, FaChartBar, FaHome, FaSignOutAlt, FaFileAlt, FaQuestionCircle } from "react-icons/fa";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logout } from "@/services/auth";
@@ -86,7 +86,7 @@ export default function Sidebar() {
         onClick={() => router.push('/dashboard/help')}
         className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition mb-2"
       >
-        <span className="text-lg"><FaHome /></span>
+        <span className="text-lg"><FaQuestionCircle /></span>
         <span>Help</span>
       </button>
       <button

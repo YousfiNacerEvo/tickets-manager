@@ -181,13 +181,14 @@ export default function ReportingPage() {
   if (!userChecked || !isAdmin) return null;
 
   const exportToExcel = () => {
-    if (!dashboardStats) return;
+    if (!reportData) return;
     try {
+      const stats = buildReportingStats(reportData);
       const workbook = XLSX.utils.book_new();
 
       // Feuille 1: Tickets par Client
       const ticketsByStationWS = XLSX.utils.json_to_sheet(
-        dashboardStats.ticketsByStation.map(item => ({
+        stats.ticketsByStation.map(item => ({
           'Client': item.station,
           'Nombre de Tickets': item.count
         }))
@@ -198,24 +199,25 @@ export default function ReportingPage() {
       const priorityOrder = ["low", "medium", "high"];
       const priorityData = priorityOrder.map(priority => ({
         'Priorité': priority,
-        'Nombre de Tickets': (dashboardStats.incidentsByPriority.find(item => item.priority === priority) || { count: 0 }).count
+        'Nombre de Tickets': (stats.incidentsByPriority.find(item => item.priority === priority) || { count: 0 }).count
       }));
       const priorityWS = XLSX.utils.json_to_sheet(priorityData);
       XLSX.utils.book_append_sheet(workbook, priorityWS, 'Tickets par Priorité');
 
       // Feuille 3: Tickets par Station
-      const stationData = dashboardStats.nocOsticketCategories.map(item => ({
-        'Station': item.category,
-        'Nombre de Tickets': item.count
-      }));
-      const stationWS = XLSX.utils.json_to_sheet(stationData);
+      const stationWS = XLSX.utils.json_to_sheet(
+        stats.nocOsticketCategories.map(item => ({
+          'Station': item.category,
+          'Nombre de Tickets': item.count
+        }))
+      );
       XLSX.utils.book_append_sheet(workbook, stationWS, 'Tickets par Station');
 
       // Feuille 4: Tickets par Statut
       const statusOrder = ["open", "closed", "in_progress"];
       const statusData = statusOrder.map(status => ({
         'Statut': status,
-        'Nombre de Tickets': (dashboardStats.incidentsByStatus.find(item => item.status === status) || { count: 0 }).count
+        'Nombre de Tickets': (stats.incidentsByStatus.find(item => item.status === status) || { count: 0 }).count
       }));
       const statusWS = XLSX.utils.json_to_sheet(statusData);
       XLSX.utils.book_append_sheet(workbook, statusWS, 'Tickets par Statut');
@@ -305,7 +307,7 @@ export default function ReportingPage() {
           ];
         });
         pdf.autoTable({
-          head: [["ID", "Titre", "Statut", "Type", "Client", "Date"]],
+          head: [["ID", "Title", "Status", "Type", "Client", "Date"]],
           body: ticketRows,
           startY: y,
           theme: 'grid',

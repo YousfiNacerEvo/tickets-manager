@@ -78,11 +78,11 @@ const helpTopics = [
       },
       {
         text: "Step 2 – Choose a Report Date range   ",
-        
+        image: "/reporting/step2.png"
       },
       {
         text: "Step 3 – Export or DownloadClick  “Export PDF” or “Export Excel” to save the report for sharing or offline use.",
-        
+        image: "/reporting/step3.png"
       }
     ]
   },
