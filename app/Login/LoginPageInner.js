@@ -71,13 +71,7 @@ export default function LoginPageInner() {
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-100 via-white to-blue-200 overflow-hidden">
       <div className="text-center bg-transparent mt-2">
         <div className="flex justify-center mb-2">
-          <Image
-            src="/logo.png"
-            alt="ASBU Logo"
-            width={300}
-            height={300}
-            className="object-contain"
-          />
+          <img src="/logo.png" alt="ASBU Logo" width={300} height={300} className="object-contain" />
         </div>
       </div>
       <div className="min-h-screen flex items-center justify-center bg-transparent relative z-10">
