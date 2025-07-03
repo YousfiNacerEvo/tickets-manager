@@ -318,7 +318,7 @@ export default function ReportingPage() {
       } else {
         y += 10;
         pdf.setFontSize(14);
-        pdf.text('Tickets liste', margin, y);
+        pdf.text('Tickets list', margin, y);
         y += 4;
         pdf.setFontSize(10);
         pdf.text('Aucun ticket trouvé pour cette période.', margin, y + 6);
@@ -544,7 +544,7 @@ export default function ReportingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-800">tickets liste</CardTitle>
+          <CardTitle className="text-gray-800">tickets list</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -555,8 +555,8 @@ export default function ReportingPage() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 text-gray-800">ID</th>
-                    <th className="text-left py-3 px-4 text-gray-800">Titre</th>
-                    <th className="text-left py-3 px-4 text-gray-800">Statut</th>
+                    <th className="text-left py-3 px-4 text-gray-800">Title</th>
+                    <th className="text-left py-3 px-4 text-gray-800">Status</th>
                     <th className="text-left py-3 px-4 text-gray-800">Type</th>
                     <th className="text-left py-3 px-4 text-gray-800">Client</th>
                     <th className="text-left py-3 px-4 text-gray-800">Date</th>
