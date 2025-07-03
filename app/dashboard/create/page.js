@@ -151,7 +151,7 @@ export default function CreateTicket() {
         const creatorEmail = getCreatorEmail();
         await sendTicketNotificationEmail(
           ticketId,
-          "naceryousfi007@gmail.com",//support@asbumenos.net
+          "support@asbumenos.net",//support@asbumenos.net
           token,
           `A new ticket (ID: <b>${ticketId}</b>) has been created by ${creatorEmail}.<br>You can view the ticket here: <a href=\"https://tickets-manager-kappa.vercel.app/dashboard/tickets/${ticketId}\">View Ticket</a>`
         );
