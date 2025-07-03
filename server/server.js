@@ -451,7 +451,7 @@ const transporter = nodemailer.createTransport({
 // Endpoint pour l'envoi d'email de notification de ticket
 app.post('/api/send-ticket', authenticateToken, async (req, res) => {
   try {
-    const { ticketId, userEmail, message } = req.body;
+    const { ticketId, userEmail, message, subject } = req.body;
 
     if (!ticketId) {
       return res.status(400).json({
@@ -465,7 +465,7 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: userEmail,
-      subject: message ? 'Ticket Status Update' : 'New ticket has been created ',
+      subject: subject || (message ? 'Ticket Status Update' : 'New ticket has been created '),
       html: message
         ? `<p>${message}</p>`
         : `
