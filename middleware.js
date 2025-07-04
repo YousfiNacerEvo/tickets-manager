@@ -39,6 +39,6 @@ export async function middleware(req) {
 export const config = {
   matcher: [
     // Exclure les fichiers statiques à la racine (ex: /logo.png, /robots.txt, etc.)
-    '/((?!_next/static|_next/image|favicon.ico|logo.png|public/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|logo2.png|public/).*)',
   ],
 }; 
