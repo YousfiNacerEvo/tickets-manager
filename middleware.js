@@ -13,7 +13,7 @@ export async function middleware(req) {
   console.log('Cookies:', req.cookies.getAll());
 
   // Routes publiques qui ne nécessitent pas d'authentification
-  const publicRoutes = ['/Login', '/Login/ResetPassword', '/Login/update-password'];
+  const publicRoutes = ['/Login', '/Login/ResetPassword', '/Login/update-password','/Login/ResetPassword'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isPasswordReset = pathname.startsWith('/Login/update-password') && req.nextUrl.searchParams.has('code');
 
