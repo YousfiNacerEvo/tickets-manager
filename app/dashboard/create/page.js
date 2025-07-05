@@ -153,7 +153,7 @@ export default function CreateTicket() {
         const creatorEmail = getCreatorEmail();
         await sendTicketNotificationEmail(
           ticketId,
-          "zenshin008@gmail.com",//support@asbumenos.net
+          "support@asbumenos.net",//support@asbumenos.net
           token,
           null, // Pas de message personnalisé, utiliser le template par défaut
           null, // Pas de sujet personnalisé, utiliser le template par défaut
