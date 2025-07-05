@@ -451,7 +451,7 @@ const transporter = nodemailer.createTransport({
 // Endpoint pour l'envoi d'email de notification de ticket
 app.post('/api/send-ticket', authenticateToken, async (req, res) => {
   try {
-    const { ticketId, userEmail, message, subject } = req.body;
+    const { ticketId, userEmail, message, subject, isClientEmail = false } = req.body;
 
     if (!ticketId) {
       return res.status(400).json({
@@ -460,21 +460,50 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
       });
     }
 
+    // Récupérer les informations du ticket
+    const { data: ticketData, error: ticketError } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('id', ticketId)
+      .single();
+
+    if (ticketError || !ticketData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket non trouvé'
+      });
+    }
+
     const ticketUrl = `https://tickets-manager-kappa.vercel.app/dashboard/tickets/${ticketId}`;
+    
+    // Template d'email avec les informations demandées
+    const emailTemplate = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Subject: ${ticketData.title}</h2>
+        <p><strong>Priority:</strong> ${ticketData.priority}</p>
+        <p><strong>Service:</strong> ${ticketData.type}</p>
+        <p><strong>Ticket ID:</strong> ID_${ticketId}</p>
+        ${!isClientEmail ? `<p><strong>Click here to view the ticket:</strong> <a href="${ticketUrl}">ID_${ticketId}</a></p>` : ''}
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+        
+        <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px;">
+          <p style="margin: 0; font-weight: bold;">*ASBU ,News and Programmes Exchange Center - Algiers</p>
+          <p style="margin: 5px 0;">: E-mail: support@asbumenos.net</p>
+          <p style="margin: 5px 0;">: Site web: www.asbu.net / www.asbucenter.dz</p>
+          <p style="margin: 5px 0;">**************************************************</p>
+          <p style="margin: 5px 0;">MENOS VoIP : 4001/ 4002</p>
+          <p style="margin: 5px 0;">HOTLINE:+213 20 40 68 20</p>
+          <p style="margin: 5px 0;">GSM NOC :+213 667 32 54 13</p>
+        </div>
+      </div>
+    `;
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: userEmail,
-      subject: subject || (message ? 'Ticket Status Update' : 'New ticket has been created '),
-      html: message
-        ? `<p>${message}</p>`
-        : `
-          <h2>A new ticket has been created</h2>
-          <p>A new ticket has been created in the system.</p>
-          <p><strong>User Elmail :</strong> ${req.user.email || 'anonymous'}</p>
-          <p>You can access the ticket by clicking on the following link :</p>
-          <a href="${ticketUrl}">Voir le ticket</a>
-        `
+      subject: subject || `ID_${ticketId}`,
+      html: message ? `<p>${message}</p>` : emailTemplate
     };
 
     await transporter.sendMail(mailOptions);

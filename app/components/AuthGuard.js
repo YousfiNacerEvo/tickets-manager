@@ -7,7 +7,7 @@ export default function AuthGuard({ children }) {
   useEffect(() => {
     const checkToken = () => {
       const hasCookie = document.cookie.includes('sb-mcuufqubztbvmbgtqqya-auth-token=');
-      console.log('AuthGuard check, docCookie:',  document.cookie);
+      
       if (!hasCookie) {
         router.replace('/Login');
       }

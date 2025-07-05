@@ -211,8 +211,9 @@ export default function TicketDetails({ ticket }) {
             ticket.id,
             formData.clientEmail,
             token,
-            `Dear customer, the status of your ticket (ID: <b>${ticket.id}</b>) is now: ${formData.status}. Thank you for your patience.`,
-            `Ticket #${ticket.id} - Status Update`
+            null, // Pas de message personnalisé, utiliser le template par défaut
+            null, // Pas de sujet personnalisé, utiliser le template par défaut
+            true // isClientEmail = true pour ne pas inclure le lien vers le ticket
           );
         } catch (emailError) {
           console.error('Error sending status change email:', emailError);
