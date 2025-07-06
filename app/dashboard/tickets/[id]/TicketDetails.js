@@ -213,7 +213,8 @@ export default function TicketDetails({ ticket }) {
             token,
             null, // Pas de message personnalisé, utiliser le template par défaut
             null, // Pas de sujet personnalisé, utiliser le template par défaut
-            true // isClientEmail = true pour ne pas inclure le lien vers le ticket
+            true, // isClientEmail = true pour ne pas inclure le lien vers le ticket
+            true // isUpdate = true pour indiquer que c'est une mise à jour
           );
         } catch (emailError) {
           console.error('Error sending status change email:', emailError);

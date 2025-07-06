@@ -66,7 +66,7 @@ export default function StepClientInfo({ ticket, handleChange, handleNext, handl
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Station</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Service</label>
           <select
             name="station"
             value={ticket.station || ''}
@@ -74,7 +74,7 @@ export default function StepClientInfo({ ticket, handleChange, handleNext, handl
             className="w-full text-black placeholder:text-gray[300] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
             required
           >
-            <option value="">Select a station</option>
+            <option value="">Select a service</option>
             {stations.map((station) => (
               <option key={station} value={station}>
                 {station}

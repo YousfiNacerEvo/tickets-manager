@@ -176,6 +176,17 @@ app.put('/tickets/:id', async (req, res) => {
     const serverTime = new Date();
     console.log('Server time:', serverTime.toISOString());
 
+    // Récupérer l'ancien statut du ticket
+    const { data: oldTicketData, error: oldTicketError } = await supabase
+      .from('tickets')
+      .select('status, client_email')
+      .eq('id', id)
+      .single();
+
+    if (oldTicketError) {
+      console.error('Error fetching old ticket data:', oldTicketError);
+    }
+
     const updateData = {
       title,
       description,
@@ -205,6 +216,10 @@ app.put('/tickets/:id', async (req, res) => {
       console.error('Supabase error:', error);
       return res.status(400).json({ error: error.message });
     }
+
+    // Note: Email notifications are now handled by the frontend to avoid duplicates
+    // The frontend will send the appropriate email when status changes
+
     res.json(data);
   } catch (error) {
     console.error('Error while updating the ticket:', error);
@@ -451,7 +466,7 @@ const transporter = nodemailer.createTransport({
 // Endpoint pour l'envoi d'email de notification de ticket
 app.post('/api/send-ticket', authenticateToken, async (req, res) => {
   try {
-    const { ticketId, userEmail, message, subject, isClientEmail = false } = req.body;
+    const { ticketId, userEmail, message, subject, isClientEmail = false, isUpdate = false } = req.body;
 
     if (!ticketId) {
       return res.status(400).json({
@@ -481,9 +496,12 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #333;">Subject: ${ticketData.title}</h2>
         <p><strong>Priority:</strong> ${ticketData.priority}</p>
-        <p><strong>Service:</strong> ${ticketData.type}</p>
+        <p><strong>Service:</strong> ${ticketData.station}</p>
         <p><strong>Ticket ID:</strong> ID_${ticketId}</p>
+        ${isUpdate ? `<p><strong>Status:</strong> ${ticketData.status}</p>` : ''}
+        ${isUpdate ? `<p><strong>Ticket has been updated</strong></p>` : ''}
         ${!isClientEmail ? `<p><strong>Click here to view the ticket:</strong> <a href="${ticketUrl}">ID_${ticketId}</a></p>` : ''}
+        ${!isClientEmail ? `<p><strong>Ticket created by:</strong> ${ticketData.user_email}</p>` : ''}
         
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
         
@@ -502,7 +520,7 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: userEmail,
-      subject: subject || `ID_${ticketId}`,
+      subject: subject || (isUpdate ? `Ticket (ID_${ticketId}) - Ticket updated` : `Ticket (ID_${ticketId}) - New ticket created`),
       html: message ? `<p>${message}</p>` : emailTemplate
     };
 

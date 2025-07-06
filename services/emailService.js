@@ -1,7 +1,7 @@
 const API_URL ='https://gestion-ticket-back-78nj.onrender.com';
 const API_URL_LOCAL = "http://localhost:10000";
 
-export const sendTicketNotificationEmail = async (ticketId, userEmail, token, message, subject, isClientEmail = false) => {
+export const sendTicketNotificationEmail = async (ticketId, userEmail, token, message, subject, isClientEmail = false, isUpdate = false) => {
   try {
     if (!ticketId || !userEmail) {
       throw new Error('Ticket ID and user email required');
@@ -13,7 +13,7 @@ export const sendTicketNotificationEmail = async (ticketId, userEmail, token, me
         'Content-Type': 'application/json',
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ ticketId, userEmail, message, subject, isClientEmail }),
+      body: JSON.stringify({ ticketId, userEmail, message, subject, isClientEmail, isUpdate }),
     });
 
     const data = await response.json();
