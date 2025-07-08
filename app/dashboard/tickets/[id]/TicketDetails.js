@@ -220,6 +220,22 @@ export default function TicketDetails({ ticket }) {
           console.error('Error sending status change email:', emailError);
         }
       }
+      // Si le ticket est fermé, notifier l'admin
+      if (statusChanged && formData.status === "closed") {
+        try {
+          await sendTicketNotificationEmail(
+            ticket.id,
+            "zenshin008@gmail.com",//support@asbumenos.net
+            token,
+            null,
+            `Ticket (ID_${ticket.id}) - Ticket closed`, // Objet personnalisé
+            false, // isClientEmail = false
+            true   // isUpdate = true
+          );
+        } catch (emailError) {
+          console.error('Error sending close notification to admin:', emailError);
+        }
+      }
       setIsEditing(false);
       setSuccessMessage('Changes have been saved successfully!');
       setTimeout(() => setSuccessMessage(''), 4000);

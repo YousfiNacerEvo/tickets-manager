@@ -136,6 +136,7 @@ export default function CreateTicket() {
       // Send notification email to client
       if (ticket.clientEmail) {
         try {
+          const ticketUrl = `https://tickets-manager-kappa.vercel.app/dashboard/tickets/${ticketId}`;
           await sendTicketNotificationEmail(
             ticketId,
             ticket.clientEmail,
@@ -153,7 +154,7 @@ export default function CreateTicket() {
         const creatorEmail = getCreatorEmail();
         await sendTicketNotificationEmail(
           ticketId,
-          "support@asbumenos.net",//support@asbumenos.net
+          "zenshin008@gmail.com",//support@asbumenos.net
           token,
           null, // Pas de message personnalisé, utiliser le template par défaut
           null, // Pas de sujet personnalisé, utiliser le template par défaut

@@ -489,8 +489,39 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
       });
     }
 
+    // Récupérer les commentaires du ticket
+    const { data: comments, error: commentsError } = await supabase
+      .from('ticket_comments')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('created_at', { ascending: true });
+
+    // Correction : définir ticketUrl avant de l'utiliser dans le template
     const ticketUrl = `https://tickets-manager-kappa.vercel.app/dashboard/tickets/${ticketId}`;
-    
+
+    let commentsHtml = '';
+    if (comments && comments.length > 0) {
+      commentsHtml = `<div style="margin-top:30px;">
+        <h3 style="color:#222; margin-bottom:8px;">Commentaires :</h3>
+        <ul style="padding-left:0; list-style:none;">
+          ${comments.map(c => `
+            <li style="margin-bottom:12px; border-bottom:1px solid #eee; padding-bottom:8px;">
+              <div><b>${c.user_email || 'Utilisateur'}</b> <span style="color:#888; font-size:12px;">(${new Date(c.created_at).toLocaleString('fr-FR')})</span></div>
+              <div style="margin-top:2px;">${c.content}</div>
+            </li>
+          `).join('')}
+        </ul>
+      </div>`;
+    }
+
+    let resolutionHtml = '';
+    if (ticketData.resolution_comment) {
+      resolutionHtml = `<div style="margin-top:30px;">
+        <h3 style="color:#222; margin-bottom:8px;">Commentaire de résolution :</h3>
+        <div style="background:#f6f6f6; border-radius:5px; padding:10px 15px;">${ticketData.resolution_comment}</div>
+      </div>`;
+    }
+
     // Template d'email avec les informations demandées
     const emailTemplate = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -502,9 +533,9 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
         ${isUpdate ? `<p><strong>Ticket has been updated</strong></p>` : ''}
         ${!isClientEmail ? `<p><strong>Click here to view the ticket:</strong> <a href="${ticketUrl}">ID_${ticketId}</a></p>` : ''}
         ${!isClientEmail ? `<p><strong>Ticket created by:</strong> ${ticketData.user_email}</p>` : ''}
-        
+        ${commentsHtml}
+        ${resolutionHtml}
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-        
         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px;">
           <p style="margin: 0; font-weight: bold;">*ASBU ,News and Programmes Exchange Center - Algiers</p>
           <p style="margin: 5px 0;">: E-mail: support@asbumenos.net</p>
@@ -517,10 +548,34 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
       </div>
     `;
 
+    // Déterminer le statut en anglais pour l'objet de l'email
+    const getStatusInEnglish = (status) => {
+      switch (status) {
+        case 'open': return 'Open';
+        case 'in_progress': return 'In Progress';
+        case 'closed': return 'Closed';
+        case 'waiting_client': return 'Waiting for Client';
+        default: return status;
+      }
+    };
+    const statusInEnglish = getStatusInEnglish(ticketData.status);
+
+    // Générer l'objet dynamiquement selon le contexte
+    let subjectToSend = subject;
+    if (!subjectToSend) {
+      if (isClientEmail && isUpdate) {
+        subjectToSend = `Ticket (ID_${ticketId}) - Status updated to ${statusInEnglish}`;
+      } else if (isUpdate) {
+        subjectToSend = `Ticket (ID_${ticketId}) - Ticket updated`;
+      } else {
+        subjectToSend = `Ticket (ID_${ticketId}) - New ticket created`;
+      }
+    }
+
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: userEmail,
-      subject: subject || (isUpdate ? `Ticket (ID_${ticketId}) - Ticket updated` : `Ticket (ID_${ticketId}) - New ticket created`),
+      subject: subjectToSend,
       html: message ? `<p>${message}</p>` : emailTemplate
     };
 
