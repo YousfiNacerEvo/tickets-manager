@@ -596,9 +596,6 @@ export default function ReportingPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="w-full h-[300px]">
-                    <Bar data={chartData} options={chartOptions} className="w-full h-full" />
-                  </div>
                 </div>
               </>
             ) : (
