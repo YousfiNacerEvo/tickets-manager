@@ -225,7 +225,7 @@ export default function TicketDetails({ ticket }) {
         try {
           await sendTicketNotificationEmail(
             ticket.id,
-            "zenshin008@gmail.com",//support@asbumenos.net
+            "support@asbumenos.net",//support@asbumenos.net
             token,
             null,
             `Ticket (ID_${ticket.id}) - Ticket closed`, // Objet personnalisé

@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { format, addMonths, startOfMonth, endOfMonth, max, min, isAfter, isBefore } from "date-fns";
+import { fr, enUS } from "date-fns/locale";
 import { CalendarIcon, Download, FileDown } from "lucide-react";
 import { Bar } from "react-chartjs-2";
 import {
@@ -32,7 +33,7 @@ import {
   getIncidentsByStatus,
   getClientToken
 } from '@/services/ticketservice';
-import DashboardCharts from '../components/DashboardCharts';
+import ReportingCharts from '../components/ReportingCharts';
 import { useRouter } from 'next/navigation';
 import Chart from 'chart.js/auto';
 
@@ -53,7 +54,7 @@ function toLocalDateString(date) {
   return `${year}-${month}-${day}`;
 }
 
-function buildReportingStats(reportData) {
+function buildReportingStats(reportData, startDate, endDate) {
   if (!reportData) return null;
   // Générer le même format que dashboardStats mais à partir de reportData filtré
   // Tickets By Client
@@ -90,11 +91,46 @@ function buildReportingStats(reportData) {
     const count = reportData.tickets.filter(ticket => ticket.status === status).length;
     incidentsByStatus.push({ status, count });
   });
+
+  // --- Nouvelle logique timeSeriesByStatus ---
+  let timeSeriesByStatus = [];
+  if (reportData.tickets && startDate && endDate) {
+    // Découper la période sélectionnée en mois partiels
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    let current = startOfMonth(start);
+    while (isBefore(current, end) || current.getMonth() === end.getMonth() && current.getFullYear() === end.getFullYear()) {
+      // Début réel de la sous-période
+      const periodStart = max([current, start]);
+      // Fin réelle de la sous-période
+      const periodEnd = min([endOfMonth(current), end]);
+      // Filtrer les tickets dans cette sous-période
+      const ticketsForPeriod = reportData.tickets.filter(ticket => {
+        const d = new Date(ticket.created_at);
+        return d >= periodStart && d <= periodEnd;
+      });
+      // Compter par statut
+      const obj = {
+        label: format(current, 'MMMM yyyy', { locale: enUS }),
+        displayLabel: format(current, 'MMMM yyyy', { locale: enUS })
+      };
+      const statusOrder = ["open", "closed", "in_progress"];
+      statusOrder.forEach(status => {
+        obj[status] = ticketsForPeriod.filter(t => t.status === status).length;
+      });
+      timeSeriesByStatus.push(obj);
+      current = addMonths(current, 1);
+      if (isAfter(current, end)) break;
+    }
+  }
+  // ---
+
   return {
     ticketsByStation,
     incidentsByPriority,
     nocOsticketCategories,
-    incidentsByStatus
+    incidentsByStatus,
+    timeSeriesByStatus // Ajouté pour l'histogramme groupé
   };
 }
 
@@ -183,152 +219,175 @@ export default function ReportingPage() {
   const exportToExcel = () => {
     if (!reportData) return;
     try {
-      const stats = buildReportingStats(reportData);
+      const stats = buildReportingStats(reportData, startDate, endDate);
       const workbook = XLSX.utils.book_new();
 
-      // Feuille 1: Tickets par Client
+      // Feuille 1: Tickets by Month (nouveau)
+      const monthWS = XLSX.utils.json_to_sheet(
+        (stats.timeSeriesByStatus || []).map(item => ({
+          'Month': item.displayLabel || item.label,
+          'Open': item.open,
+          'Closed': item.closed,
+          'In Progress': item.in_progress
+        }))
+      );
+      XLSX.utils.book_append_sheet(workbook, monthWS, 'Tickets By Month');
+
+      // Feuille 2: Tickets par Client
       const ticketsByStationWS = XLSX.utils.json_to_sheet(
         stats.ticketsByStation.map(item => ({
           'Client': item.station,
-          'Nombre de Tickets': item.count
+          'Number of Tickets': item.count
         }))
       );
       XLSX.utils.book_append_sheet(workbook, ticketsByStationWS, 'Tickets par Client');
 
-      // Feuille 2: Tickets par Priorité
+      // Feuille 3: Tickets par Priorité
       const priorityOrder = ["low", "medium", "high"];
       const priorityData = priorityOrder.map(priority => ({
         'Priorité': priority,
-        'Nombre de Tickets': (stats.incidentsByPriority.find(item => item.priority === priority) || { count: 0 }).count
+        'Number of Tickets': (stats.incidentsByPriority.find(item => item.priority === priority) || { count: 0 }).count
       }));
       const priorityWS = XLSX.utils.json_to_sheet(priorityData);
       XLSX.utils.book_append_sheet(workbook, priorityWS, 'Tickets par Priorité');
 
-      // Feuille 3: Tickets par Station
+      // Feuille 4: Tickets par Station
       const stationWS = XLSX.utils.json_to_sheet(
         stats.nocOsticketCategories.map(item => ({
           'Station': item.category,
-          'Nombre de Tickets': item.count
+          'Number of Tickets': item.count
         }))
       );
       XLSX.utils.book_append_sheet(workbook, stationWS, 'Tickets par Station');
 
-      // Feuille 4: Tickets par Statut
+      // Feuille 5: Tickets par Statut
       const statusOrder = ["open", "closed", "in_progress"];
       const statusData = statusOrder.map(status => ({
         'Statut': status,
-        'Nombre de Tickets': (stats.incidentsByStatus.find(item => item.status === status) || { count: 0 }).count
+        'Number of Tickets': (stats.incidentsByStatus.find(item => item.status === status) || { count: 0 }).count
       }));
       const statusWS = XLSX.utils.json_to_sheet(statusData);
       XLSX.utils.book_append_sheet(workbook, statusWS, 'Tickets par Statut');
 
-      XLSX.writeFile(workbook, 'dashboard-technique.xlsx');
+      XLSX.writeFile(workbook, 'reporting.xlsx');
     } catch (error) {
-      console.error('Erreur lors de l\'export Excel:', error);
-      alert('Erreur lors de l\'export Excel');
+      console.error('Error while exporting Excel:', error);
+      alert('Error while exporting Excel');
     }
   };
 
   const exportToPDF = async () => {
-    try {
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
-      const autoTableModule = await import('jspdf-autotable');
-      const autoTable = autoTableModule.default || autoTableModule;
-      const pdf = new jsPDF('landscape', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 10;
-      let y = margin;
-
-      // 1. Ajouter le logo
-      const toDataURL = url => fetch(url)
-        .then(response => response.blob())
-        .then(blob => new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        }));
-
-      try {
-        const logoDataUrl = await toDataURL('/logo.png');
-        const logoWidth = 60;
-        const logoHeight = 30;
-        const logoX = (pageWidth - logoWidth) / 2;
-        pdf.addImage(logoDataUrl, 'PNG', logoX, y, logoWidth, logoHeight);
-        y += logoHeight + 8;
-      } catch (error) {
-        console.error("Impossible de charger le logo pour le PDF", error);
-      }
-
-      // 2. Capturer les images des graphiques du dashboard
-      const chartImages = [
-        { title: 'Tickets By Client', ref: chartRefs.current.client },
-        { title: 'Tickets By Priority', ref: chartRefs.current.priority },
-        { title: 'Tickets By Station', ref: chartRefs.current.station },
-        { title: 'Tickets By Status', ref: chartRefs.current.status },
-      ];
-      const graphWidth = (pageWidth - margin * 3) / 2;
-      const graphHeight = 65;
-      let i = 0;
-      for (let row = 0; row < 2; row++) {
-        let x = margin;
-        for (let col = 0; col < 2; col++) {
-          if (i >= chartImages.length) break;
-          pdf.setFontSize(12);
-          pdf.text(chartImages[i].title, x + graphWidth / 2, y + 8, { align: 'center' });
-          const chartInstance = chartImages[i].ref && chartImages[i].ref.chartInstance ? chartImages[i].ref.chartInstance : chartImages[i].ref;
-          if (chartInstance && chartInstance.toBase64Image) {
-            const imgData = chartInstance.toBase64Image();
-            pdf.addImage(imgData, 'PNG', x, y + 10, graphWidth, graphHeight);
-          }
-          x += graphWidth + margin;
-          i++;
+    let tries = 0;
+    const maxTries = 5;
+    async function doExport() {
+      // Vérifier que les refs sont prêtes
+      if (!chartRefs.current || !chartRefs.current.pie || !chartRefs.current.bar) {
+        if (tries < maxTries) {
+          tries++;
+          setTimeout(doExport, 300);
+          return;
+        } else {
+          alert('Charts are not ready for export. Please try again.');
+          return;
         }
-        y += graphHeight + 18;
       }
+      try {
+        const jsPDFModule = await import('jspdf');
+        const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
+        const autoTableModule = await import('jspdf-autotable');
+        const autoTable = autoTableModule.default || autoTableModule;
+        const pdf = new jsPDF('landscape', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const margin = 10;
+        let y = margin;
 
-      // 3. Ajouter la liste des tickets
-      if (reportData && reportData.tickets && reportData.tickets.length > 0) {
-        console.log('Exemple de ticket :', reportData.tickets[0]);
-        y += 10;
-        pdf.setFontSize(14);
-        pdf.text('Tickets liste', margin, y);
-        y += 4;
-        const ticketRows = reportData.tickets.map(ticket => {
-          const dateValue = ticket.createdAt || ticket.date || ticket.created_at || ticket.updatedAt || '';
-          return [
-            ticket.id || '',
-            ticket.title || '',
-            ticket.status || '',
-            ticket.type || '',
-            ticket.client || '',
-            dateValue ? (new Date(dateValue)).toLocaleDateString() : ''
-          ];
-        });
-        pdf.autoTable({
-          head: [["ID", "Title", "Status", "Type", "Client", "Date"]],
-          body: ticketRows,
-          startY: y,
-          theme: 'grid',
-          headStyles: { fillColor: [21, 93, 252] },
-          styles: { fontSize: 10 },
-          margin: { left: margin, right: margin }
-        });
-      } else {
-        y += 10;
-        pdf.setFontSize(14);
-        pdf.text('Tickets list', margin, y);
-        y += 4;
-        pdf.setFontSize(10);
-        pdf.text('Aucun ticket trouvé pour cette période.', margin, y + 6);
+        // 1. Ajouter le logo
+        const toDataURL = url => fetch(url)
+          .then(response => response.blob())
+          .then(blob => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          }));
+
+        try {
+          const logoDataUrl = await toDataURL('/logo.png');
+          const logoWidth = 60;
+          const logoHeight = 30;
+          const logoX = (pageWidth - logoWidth) / 2;
+          pdf.addImage(logoDataUrl, 'PNG', logoX, y, logoWidth, logoHeight);
+          y += logoHeight + 8;
+        } catch (error) {
+          console.error("Impossible de charger le logo pour le PDF", error);
+        }
+
+        // 2. Capturer les deux nouveaux graphiques (Pie et Bar) avec ratio adapté
+        // Pie chart petit, Bar chart petit
+        const pieWidth = 90, pieHeight = 90;
+        const barWidth = 140, barHeight = 90;
+        // Positionnement
+        const pieX = margin;
+        const barX = pieX + pieWidth + margin;
+        pdf.setFontSize(12);
+        pdf.text('Number of Tickets', pieX + pieWidth / 2, y + 8, { align: 'center' });
+        pdf.text('Ticket Status Per Month', barX + barWidth / 2, y + 8, { align: 'center' });
+        // Pie chart
+        const pieInstance = chartRefs.current.pie && chartRefs.current.pie.chartInstance ? chartRefs.current.pie.chartInstance : chartRefs.current.pie;
+        if (pieInstance && pieInstance.toBase64Image) {
+          const imgData = pieInstance.toBase64Image();
+          pdf.addImage(imgData, 'PNG', pieX, y + 10, pieWidth, pieHeight);
+        }
+        // Bar chart
+        const barInstance = chartRefs.current.bar && chartRefs.current.bar.chartInstance ? chartRefs.current.bar.chartInstance : chartRefs.current.bar;
+        if (barInstance && barInstance.toBase64Image) {
+          const imgData = barInstance.toBase64Image();
+          pdf.addImage(imgData, 'PNG', barX, y + 10, barWidth, barHeight);
+        }
+        y += Math.max(pieHeight, barHeight) + 18;
+
+        // 3. Tickets List (une seule fois, sans doublon d'en-tête)
+        if (reportData && reportData.tickets && reportData.tickets.length > 0) {
+          y += 10;
+          pdf.setFontSize(14);
+          pdf.text('Tickets List', margin, y);
+          y += 4;
+          const ticketRows = reportData.tickets.map(ticket => {
+            const dateValue = ticket.createdAt || ticket.date || ticket.created_at || ticket.updatedAt || '';
+            return [
+              ticket.id || '',
+              ticket.title || '',
+              ticket.status || '',
+              ticket.type || '',
+              ticket.client || '',
+              dateValue ? (new Date(dateValue)).toLocaleDateString() : ''
+            ];
+          });
+          autoTable(pdf, {
+            head: [["ID", "Title", "Status", "Type", "Client", "Date"]],
+            body: ticketRows,
+            startY: y,
+            theme: 'grid',
+            headStyles: { fillColor: [21, 93, 252] },
+            styles: { fontSize: 10 },
+            margin: { left: margin, right: margin }
+          });
+        } else {
+          y += 10;
+          pdf.setFontSize(14);
+          pdf.text('Tickets List', margin, y);
+          y += 4;
+          pdf.setFontSize(10);
+          pdf.text('No data found for this period.', margin, y + 6);
+        }
+
+        pdf.save('reporting.pdf');
+      } catch (error) {
+        console.error('Error while exporting PDF:', error);
+        alert('Error while exporting PDF. Please try again.');
       }
-
-      pdf.save('dashboard-technique.pdf');
-    } catch (error) {
-      console.error('Erreur lors de l\'export PDF:', error);
-      alert('Erreur lors de l\'export PDF. Veuillez réessayer.');
     }
+    doExport();
   };
 
   const chartData = {
@@ -458,6 +517,13 @@ export default function ReportingPage() {
                   </PopoverContent>
                 </Popover>
               </div>
+              <button
+                onClick={() => { setStartDate(""); setEndDate(""); }}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors mt-6"
+                style={{ height: '40px', alignSelf: 'end' }}
+              >
+                Reset Dates
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -509,7 +575,7 @@ export default function ReportingPage() {
             ) : reportData ? (
               <>
                 <div className="my-8">
-                  <DashboardCharts stats={buildReportingStats(reportData)} />
+                  <ReportingCharts stats={buildReportingStats(reportData, startDate, endDate)} />
                 </div>
                 <div className="space-y-4 mt-6">
                   <div className="grid grid-cols-3 gap-4">
@@ -544,11 +610,11 @@ export default function ReportingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-800">tickets list</CardTitle>
+          <CardTitle className="text-gray-800">Tickets List</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-gray-800">loading...</div>
+            <div className="text-gray-800">Loading...</div>
           ) : reportData?.tickets ? (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -584,7 +650,7 @@ export default function ReportingPage() {
         </CardContent>
       </Card>
       <div ref={chartsRef} style={{ position: 'absolute', left: '-9999px', top: '-9999px', zIndex: -1, width: '1200px' }}>
-        {reportData && <DashboardCharts stats={buildReportingStats(reportData)} chartRefs={chartRefs.current} />}
+        {reportData && <ReportingCharts stats={buildReportingStats(reportData, startDate, endDate)} chartRefs={chartRefs.current} />}
       </div>
     </div>
   );
