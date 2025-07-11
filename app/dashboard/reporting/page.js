@@ -154,18 +154,11 @@ export default function ReportingPage() {
   const chartRefs = useRef({});
 
   useEffect(() => {
-    const role = localStorage.getItem('role');
-    if (role !== 'admin') {
-      router.push('/dashboard');
-      setIsAdmin(false);
-    } else {
-      setIsAdmin(true);
-    }
     setUserChecked(true);
   }, []);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!userChecked) return;
     const fetchAllData = async () => {
       setLoading(true);
       try {
@@ -212,9 +205,9 @@ export default function ReportingPage() {
       }
     };
     fetchAllData();
-  }, [isAdmin, startDate, endDate, status, type, assignedUser, category, groupBy]);
+  }, [userChecked, startDate, endDate, status, type, assignedUser, category, groupBy]);
 
-  if (!userChecked || !isAdmin) return null;
+  if (!userChecked) return null;
 
   const exportToExcel = () => {
     if (!reportData) return;

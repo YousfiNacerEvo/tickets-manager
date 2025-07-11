@@ -15,20 +15,10 @@ const pool = new Pool({
 });
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
   fileFilter: function (req, file, cb) {
-    // Accept all file types
     cb(null, true);
   }
 });
@@ -234,13 +224,27 @@ app.post('/tickets/upload', authenticateToken, upload.array('files', 10), async 
       return res.status(400).json({ error: 'No file was uploaded' });
     }
 
-    const urls = req.files.map(file => `/uploads/${file.filename}`);
-    console.log('Uploaded files:', urls);
-
-    res.json({ urls });
+    const uploadedUrls = [];
+    for (const file of req.files) {
+      const fileName = `${Date.now()}-${file.originalname}`;
+      const { data, error } = await supabase.storage
+        .from('uploads')
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false
+        });
+      if (error) {
+        console.error('Supabase upload error:', error);
+        return res.status(500).json({ error: error.message });
+      }
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage.from('uploads').getPublicUrl(fileName);
+      uploadedUrls.push(publicUrlData.publicUrl);
+    }
+    res.json({ urls: uploadedUrls });
   } catch (error) {
-    console.error('Error while uploading files:', error);
-    res.status(500).json({ error: 'Error while uploading files' });
+    console.error('Error while uploading files to Supabase:', error);
+    res.status(500).json({ error: 'Error while uploading files to Supabase' });
   }
 });
 

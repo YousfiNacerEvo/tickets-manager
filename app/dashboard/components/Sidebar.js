@@ -34,8 +34,8 @@ export default function Sidebar() {
     { label: "Dashboard", icon: <FaChartBar />, href: "/dashboard" },
     { label: "Create Ticket", icon: <FaPlus />, href: "/dashboard/create" },
     { label: "Ticket Manager", icon: <FaList />, href: "/dashboard/tickets" },
+    { label: "Reporting", icon: <FaFileAlt />, href: "/dashboard/reporting" },
     ...(isAdmin ? [
-      { label: "Reporting", icon: <FaFileAlt />, href: "/dashboard/reporting" },
       { label: "Add Account", icon: <FaUserPlus />, href: "/dashboard/add-account" },
     ] : []),
   ];
