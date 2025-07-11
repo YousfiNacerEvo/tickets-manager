@@ -47,12 +47,16 @@ export async function getTicketById(ticketId, token) {
 
     const data = await response.json();
 
-    // Ajouter l'URL de base du backend aux URLs des fichiers
+    // Adapter les URLs : si déjà http(s), ne rien faire, sinon préfixer
     if (data && data.length > 0 && data[0].files) {
-      data[0].files = data[0].files.map(file => ({
-        ...file,
-        url: `${API_URL}${file.url}` // Utiliser API_URL au lieu de API_URL
-      }));
+      data[0].files = data[0].files.map(file => {
+        if (typeof file === 'string') {
+          return file.startsWith('http') ? { url: file } : { url: `${API_URL}${file}` };
+        } else if (file && typeof file === 'object' && file.url) {
+          return file.url.startsWith('http') ? file : { ...file, url: `${API_URL}${file.url}` };
+        }
+        return file;
+      });
     }
 
     console.log('Ticket retrieved:', data);
@@ -148,7 +152,6 @@ export async function uploadTicketFiles(files, token) {
         console.error('The server returned HTML instead of the expected JSON');
         throw new Error('The server is not accessible. Please check that the backend server is running.');
       }
-      
       let errorMessage;
       try {
         const errorData = await response.json();
@@ -167,11 +170,8 @@ export async function uploadTicketFiles(files, token) {
 
     const result = await response.json();
     console.log('Server response:', result);
-    
-    // Ajouter l'URL de base aux fichiers retournés
-    return result.urls.map(url => ({
-      url: `${API_URL}${url}`
-    }));
+    // Retourner directement les URLs publiques Supabase
+    return result.urls;
   } catch (error) {
     console.error('Detailed error:', error);
     throw error;
