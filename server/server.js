@@ -217,6 +217,16 @@ app.put('/tickets/:id', async (req, res) => {
   }
 });
 
+// Function to sanitize filename for Supabase Storage
+function sanitizeFileName(originalName) {
+  // Remove or replace problematic characters
+  return originalName
+    .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special characters with underscore
+    .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+    .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+    .substring(0, 100); // Limit length to 100 characters
+}
+
 // Route for file upload
 app.post('/tickets/upload', authenticateToken, upload.array('files', 10), async (req, res) => {
   try {
@@ -226,7 +236,13 @@ app.post('/tickets/upload', authenticateToken, upload.array('files', 10), async 
 
     const uploadedUrls = [];
     for (const file of req.files) {
-      const fileName = `${Date.now()}-${file.originalname}`;
+      // Sanitize the filename to avoid Supabase Storage key issues
+      const sanitizedFileName = sanitizeFileName(file.originalname);
+      const fileName = `${Date.now()}-${sanitizedFileName}`;
+      
+      console.log('Original filename:', file.originalname);
+      console.log('Sanitized filename:', fileName);
+      
       const { data, error } = await supabase.storage
         .from('uploads')
         .upload(fileName, file.buffer, {
