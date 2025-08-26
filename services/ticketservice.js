@@ -1,9 +1,8 @@
 // services/ticketservice.js
 // Toutes les fonctions attendent le token en argument (récupéré côté serveur dans la page avec cookies() ou côté client avec localStorage)
 
-const API_URL = "https://gestion-ticket-back-78nj.onrender.com"
-const API_URL_LOCAL = "http://localhost:10000";
-
+const API_URL ='https://gestion-ticket-back-78nj.onrender.com';//http://localhost:10000
+//https://gestion-ticket-back-78nj.onrender.com
 // Utilitaire pour récupérer le token côté client
 export function getClientToken() {
   if (typeof document !== 'undefined') {

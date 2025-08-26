@@ -9,7 +9,7 @@ import StepAttachment from './components/StepAttachment';
 import { getTicketById, sendTicketToBackend, getClientToken, uploadTicketFiles } from '@/services/ticketservice';
 import { sendTicketNotificationEmail } from '@/services/emailService';
 
-const API_URL_LOCAL = "http://localhost:10000";
+
 
 const steps = [
   { label: "ticket information", icon: (
@@ -154,7 +154,7 @@ export default function CreateTicket() {
         const creatorEmail = getCreatorEmail();
         await sendTicketNotificationEmail(
           ticketId,
-          "support@asbumenos.net",//support@asbumenos.net
+          "naceryousfi@gmail.com",//support@asbumenos.net
           token,
           null, // Pas de message personnalisé, utiliser le template par défaut
           null, // Pas de sujet personnalisé, utiliser le template par défaut

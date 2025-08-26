@@ -522,7 +522,7 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
     let commentsHtml = '';
     if (comments && comments.length > 0) {
       commentsHtml = `<div style="margin-top:30px;">
-        <h3 style="color:#222; margin-bottom:8px;">Commentaires :</h3>
+        <h3 style="color:#222; margin-bottom:8px;">Comments:</h3>
         <ul style="padding-left:0; list-style:none;">
           ${comments.map(c => `
             <li style="margin-bottom:12px; border-bottom:1px solid #eee; padding-bottom:8px;">
@@ -537,7 +537,7 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
     let resolutionHtml = '';
     if (ticketData.resolution_comment) {
       resolutionHtml = `<div style="margin-top:30px;">
-        <h3 style="color:#222; margin-bottom:8px;">Commentaire de résolution :</h3>
+        <h3 style="color:#222; margin-bottom:8px;">Resolution note:</h3>
         <div style="background:#f6f6f6; border-radius:5px; padding:10px 15px;">${ticketData.resolution_comment}</div>
       </div>`;
     }

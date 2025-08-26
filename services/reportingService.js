@@ -1,5 +1,5 @@
-const API_URL = "https://gestion-ticket-back-3.onrender.com"
-const API_URL_LOCAL = "http://localhost:10000";
+const API_URL ='https://gestion-ticket-back-78nj.onrender.com';//http://localhost:10000
+//https://gestion-ticket-back-78nj.onrender.com
 
 export async function fetchReportingData({ startDate, endDate, status, type, assignedUser, category, groupBy }) {
   const queryParams = new URLSearchParams({

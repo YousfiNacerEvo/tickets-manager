@@ -1,6 +1,5 @@
-const API_URL ='https://gestion-ticket-back-78nj.onrender.com';
-const API_URL_LOCAL = "http://localhost:10000";
-
+const API_URL ='https://gestion-ticket-back-78nj.onrender.com';//http://localhost:10000
+//https://gestion-ticket-back-78nj.onrender.com
 export const sendTicketNotificationEmail = async (ticketId, userEmail, token, message, subject, isClientEmail = false, isUpdate = false) => {
   try {
     if (!ticketId || !userEmail) {
