@@ -154,7 +154,7 @@ export default function CreateTicket() {
         const creatorEmail = getCreatorEmail();
         await sendTicketNotificationEmail(
           ticketId,
-          "naceryousfi@gmail.com",//support@asbumenos.net
+          "naceryousfi007@gmail.com",//support@asbumenos.net
           token,
           null, // Pas de message personnalisé, utiliser le template par défaut
           null, // Pas de sujet personnalisé, utiliser le template par défaut
