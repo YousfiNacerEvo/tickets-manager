@@ -39,7 +39,14 @@ export const sendTicketNotificationEmail = async (ticketId, userEmail, token, me
 
     return data || { success: true };
   } catch (error) {
-    if (error && (error.name === 'AbortError' || error.code === 'ABORT_ERR')) {
+    const isAbort =
+      error === 'timeout' ||
+      (typeof error === 'object' && (
+        error?.name === 'AbortError' ||
+        error?.code === 'ABORT_ERR' ||
+        (typeof error?.message === 'string' && error.message.toLowerCase().includes('abort'))
+      ));
+    if (isAbort) {
       console.warn('Email request aborted (navigation or timeout).');
       return { success: false, aborted: true };
     }

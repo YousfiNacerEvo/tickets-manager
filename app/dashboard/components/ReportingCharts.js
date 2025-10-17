@@ -2,9 +2,6 @@
 import React from 'react';
 import { Bar, Pie } from 'react-chartjs-2';
 import Chart from 'chart.js/auto';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
-
-Chart.register(ChartDataLabels);
 
 const statusOrder = ["open", "closed", "in_progress"];
 const statusColors = [
@@ -55,14 +52,6 @@ export default function ReportingCharts({ stats, chartRefs }) {
 
   const pieOptions = {
     plugins: {
-      datalabels: {
-        color: '#222',
-        font: {
-          weight: 'bold',
-          size: 18
-        },
-        formatter: (value, context) => value,
-      },
       legend: { position: 'bottom' }
     }
   };
@@ -99,7 +88,7 @@ export default function ReportingCharts({ stats, chartRefs }) {
         <h2 className="text-lg font-semibold mb-2 text-black">Number of Tickets</h2>
         <div style={{ height: '300px', width: '100%', position: 'relative' }}>
           {statusCounts.length > 0 ? (
-            <Pie data={incidentsByStatusPieData} options={pieOptions} plugins={[ChartDataLabels]} ref={el => chartRefs && (chartRefs.pie = el)} />
+            <Pie data={incidentsByStatusPieData} options={pieOptions} ref={el => chartRefs && (chartRefs.pie = el)} />
           ) : (
             <div className="text-gray-400 h-full flex items-center justify-center">No data</div>
           )}
