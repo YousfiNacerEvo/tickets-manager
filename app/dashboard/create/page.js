@@ -133,36 +133,25 @@ export default function CreateTicket() {
       const ticketId = Array.isArray(backendResponse) ? backendResponse[0]?.id : backendResponse?.id;
       if (!ticketId) throw new Error("Unable to retrieve the created ticket ID");
       
-      // Send notification email to client
+      // Send emails in background (non-blocking)
       if (ticket.clientEmail) {
-        try {
-          const ticketUrl = `https://tickets-manager-kappa.vercel.app/dashboard/tickets/${ticketId}`;
-          await sendTicketNotificationEmail(
-            ticketId,
-            ticket.clientEmail,
-            token,
-            null, // Pas de message personnalisé, utiliser le template par défaut
-            null, // Pas de sujet personnalisé, utiliser le template par défaut
-            true // isClientEmail = true pour ne pas inclure le lien vers le ticket
-          );
-        } catch (emailError) {
-          console.error('Error while sending email to client:', emailError);
-        }
-      }
-      // Send notification email to admin
-      try {
-        const creatorEmail = getCreatorEmail();
-        await sendTicketNotificationEmail(
+        void sendTicketNotificationEmail(
           ticketId,
-          "naceryousfi007@gmail.com",//support@asbumenos.net
+          ticket.clientEmail,
           token,
-          null, // Pas de message personnalisé, utiliser le template par défaut
-          null, // Pas de sujet personnalisé, utiliser le template par défaut
-          false // isClientEmail = false pour inclure le lien vers le ticket
-        );
-      } catch (emailError) {
-        console.error('Error while sending email to admin:', emailError);
+          null,
+          null,
+          true
+        ).catch((emailError) => console.error('Error while sending email to client:', emailError));
       }
+      void sendTicketNotificationEmail(
+        ticketId,
+        "naceryousfi007@gmail.com",//support@asbumenos.net
+        token,
+        null,
+        null,
+        false
+      ).catch((emailError) => console.error('Error while sending email to admin:', emailError));
       
       setMessage({ type: 'success', text: 'Ticket created successfully!' });
       setTimeout(() => {
