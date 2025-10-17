@@ -3,7 +3,7 @@ const API_URL ='https://gestion-ticket-back-78nj.onrender.com';//http://localhos
 
 function createTimeoutController(timeoutMs = 10000) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = setTimeout(() => controller.abort('timeout'), timeoutMs);
   return { controller, clear: () => clearTimeout(timeoutId) };
 }
 
@@ -23,6 +23,7 @@ export const sendTicketNotificationEmail = async (ticketId, userEmail, token, me
       },
       body: JSON.stringify({ ticketId, userEmail, message, subject, isClientEmail, isUpdate }),
       signal: controller.signal,
+      keepalive: true,
     }).finally(() => clear());
 
     let data = null;
@@ -38,6 +39,10 @@ export const sendTicketNotificationEmail = async (ticketId, userEmail, token, me
 
     return data || { success: true };
   } catch (error) {
+    if (error && (error.name === 'AbortError' || error.code === 'ABORT_ERR')) {
+      console.warn('Email request aborted (navigation or timeout).');
+      return { success: false, aborted: true };
+    }
     console.error('Error while sending email:', error);
     throw error;
   }
