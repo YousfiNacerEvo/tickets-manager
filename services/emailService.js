@@ -1,7 +1,7 @@
 const API_URL ='https://gestion-ticket-back-78nj.onrender.com';//http://localhost:10000
 //https://gestion-ticket-back-78nj.onrender.com
 
-function createTimeoutController(timeoutMs = 10000) {
+function createTimeoutController(timeoutMs = 60000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort('timeout'), timeoutMs);
   return { controller, clear: () => clearTimeout(timeoutId) };
@@ -13,7 +13,7 @@ export const sendTicketNotificationEmail = async (ticketId, userEmail, token, me
       throw new Error('Ticket ID and user email required');
     }
 
-    const { controller, clear } = createTimeoutController(12000);
+    const { controller, clear } = createTimeoutController(60000);
 
     const response = await fetch(`${API_URL}/api/send-ticket`, {
       method: 'POST',
