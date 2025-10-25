@@ -1,8 +1,60 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+## Ticket Management System
+
+Un système de gestion de tickets avec authentification, notifications par email et reporting.
+
+## Fonctionnalités
+
+- 🎫 Création et gestion de tickets
+- 📧 Notifications par email via **SendGrid**
+- 📊 Tableaux de bord et statistiques
+- 👥 Gestion des utilisateurs
+- 💬 Commentaires sur les tickets
+- 📎 Pièces jointes
+- 🔐 Authentification sécurisée avec Supabase
+
+## Configuration
+
+### 1. Installation des dépendances
+
+```bash
+# Installation frontend
+npm install
+
+# Installation backend
+cd server
+npm install
+```
+
+### 2. Configuration de l'email (SendGrid)
+
+Le projet utilise **SendGrid** pour l'envoi d'emails (remplaçant Nodemailer).
+
+1. Créez un compte sur [SendGrid](https://sendgrid.com)
+2. Créez une clé API avec les permissions "Mail Send"
+3. Vérifiez votre email d'expéditeur dans SendGrid
+4. Ajoutez les variables d'environnement dans `server/.env`:
+
+```env
+SENDGRID_API_KEY=SG.your_api_key_here
+SENDGRID_FROM_EMAIL=your-verified-email@example.com
+```
+
+📖 **Documentation détaillée**: Voir [server/SENDGRID_CONFIG.md](server/SENDGRID_CONFIG.md)
+
+### 3. Tester la configuration email
+
+```bash
+cd server
+node test-sendgrid.js
+```
+
 ## Getting Started
 
-First, run the development server:
+### Frontend
+
+Lancez le serveur de développement:
 
 ```bash
 npm run dev
@@ -14,9 +66,18 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Backend
+
+Lancez le serveur Express:
+
+```bash
+cd server
+npm start
+```
+
+Le serveur API sera disponible sur [http://localhost:10000](http://localhost:10000).
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
