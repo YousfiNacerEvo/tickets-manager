@@ -165,3 +165,23 @@ export async function resetPassword(access_token, new_password) {
     throw error;
   }
 }
+
+export async function getUserRole(token) {
+  if (!token) throw new Error("No authentication token found. Please log in again.");
+  try {
+    const response = await fetch(`${API_URL}/user/role`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Error while retrieving user role.');
+    }
+    const data = await response.json();
+    return data.role || 'user';
+  } catch (error) {
+    console.error('Error:', error);
+    return 'user'; // Par défaut, retourner 'user' en cas d'erreur
+  }
+}

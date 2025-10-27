@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { getAllTickets, getClientToken } from '@/services/ticketservice';
+import { getAllTickets, getClientToken, deleteTicket } from '@/services/ticketservice';
+import { getUserRole } from '@/services/auth';
 import TicketSearchBar from './TicketSearchBar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -22,6 +23,8 @@ export default function TicketsListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loadingTicketId, setLoadingTicketId] = useState(null);
   const [sortOrder, setSortOrder] = useState('desc');
+  const [userRole, setUserRole] = useState('user');
+  const [deletingTicketId, setDeletingTicketId] = useState(null);
   const ticketsPerPage = 10;
   const router = useRouter();
 
@@ -40,6 +43,10 @@ export default function TicketsListPage() {
           return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
         });
         setTickets(sortedTickets);
+        
+        // Récupérer le rôle de l'utilisateur
+        const role = await getUserRole(token);
+        setUserRole(role);
       } catch (err) {
         console.error('Error TicketsListPage:', err);
         setError(err.message);
@@ -140,6 +147,33 @@ export default function TicketsListPage() {
     router.push(`/dashboard/tickets/${ticketId}`);
   };
 
+  const handleDeleteTicket = async (ticketId, event) => {
+    event.stopPropagation(); // Empêcher la navigation vers les détails du ticket
+    
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ticket #${ticketId}? This action cannot be undone.`
+    );
+    
+    if (!confirmDelete) return;
+    
+    setDeletingTicketId(ticketId);
+    try {
+      const token = getClientToken();
+      await deleteTicket(ticketId, token);
+      
+      // Retirer le ticket de la liste locale
+      setTickets(prevTickets => prevTickets.filter(ticket => ticket.id !== ticketId));
+      
+      // Message de succès (optionnel)
+      alert('Ticket deleted successfully.');
+    } catch (err) {
+      console.error('Error deleting ticket:', err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setDeletingTicketId(null);
+    }
+  };
+
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen text-red-500">
@@ -203,6 +237,9 @@ export default function TicketsListPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of creation</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of closure</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created by</th>
+                      {userRole === 'admin' && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -249,6 +286,44 @@ export default function TicketsListPage() {
                           {ticket.status === 'closed' ? formatDate(ticket.closed_at) : '--'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.user_email || '--'}</td>
+                        {userRole === 'admin' && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <button
+                              onClick={(e) => handleDeleteTicket(ticket.id, e)}
+                              disabled={deletingTicketId === ticket.id}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-white font-medium transition-colors duration-200 ${
+                                deletingTicketId === ticket.id
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-red-600 hover:bg-red-700 hover:shadow-md'
+                              }`}
+                            >
+                              {deletingTicketId === ticket.id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  <span>Deleting...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg 
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    className="h-4 w-4" 
+                                    fill="none" 
+                                    viewBox="0 0 24 24" 
+                                    stroke="currentColor"
+                                  >
+                                    <path 
+                                      strokeLinecap="round" 
+                                      strokeLinejoin="round" 
+                                      strokeWidth={2} 
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                                    />
+                                  </svg>
+                                  <span>Delete</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

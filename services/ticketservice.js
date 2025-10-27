@@ -302,3 +302,24 @@ export async function addTicketComment(ticketId, content, token) {
     throw error;
   }
 }
+
+export async function deleteTicket(ticketId, token) {
+  if (!token) throw new Error("No authentication token found. Please log in again.");
+  try {
+    const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Error while deleting the ticket.');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Backend error:', error);
+    throw error;
+  }
+}

@@ -217,6 +217,50 @@ app.put('/tickets/:id', async (req, res) => {
   }
 });
 
+// Route pour supprimer un ticket (admin uniquement)
+app.delete('/tickets/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Vérifier si l'utilisateur est admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Accès refusé. Seuls les administrateurs peuvent supprimer des tickets.' });
+    }
+
+    // Supprimer d'abord les commentaires associés au ticket
+    const { error: commentsError } = await supabase
+      .from('ticket_comments')
+      .delete()
+      .eq('ticket_id', id);
+
+    if (commentsError) {
+      console.error('Error deleting ticket comments:', commentsError);
+    }
+
+    // Supprimer le ticket
+    const { data, error } = await supabase
+      .from('tickets')
+      .delete()
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: 'Ticket non trouvé' });
+    }
+
+    console.log('Ticket deleted successfully:', id);
+    res.json({ success: true, message: 'Ticket supprimé avec succès', data: data[0] });
+  } catch (error) {
+    console.error('Error while deleting the ticket:', error);
+    res.status(500).json({ error: 'Erreur serveur lors de la suppression du ticket' });
+  }
+});
+
 // Function to sanitize filename for Supabase Storage
 function sanitizeFileName(originalName) {
   // Remove or replace problematic characters
@@ -1019,6 +1063,16 @@ app.get('/check-user-exists', async (req, res) => {
     res.json({ exists: userExists });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Route pour obtenir le rôle de l'utilisateur
+app.get('/user/role', authenticateToken, async (req, res) => {
+  try {
+    res.json({ role: req.user.role || 'user' });
+  } catch (error) {
+    console.error('Error while retrieving user role:', error);
+    res.status(500).json({ error: 'Error while retrieving user role' });
   }
 });
 
