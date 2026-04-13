@@ -1,10 +1,11 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
-const path = require('path');
 const sgMail = require('@sendgrid/mail');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
@@ -32,10 +33,10 @@ if (!fs.existsSync('uploads')) {
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-console.log("Supabase URL:", process.env.SUPABASE_URL);
-console.log("Supabase Key:", supabaseKey);
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+console.log("Supabase URL configured:", Boolean(supabaseUrl));
+console.log("Supabase service role key configured:", Boolean(supabaseKey));
 const supabase = createClient(supabaseUrl, supabaseKey)
 //"https://tickets-manager-kappa.vercel.app"
 //"http://192.168.137.1:3000",
@@ -526,7 +527,7 @@ if (process.env.SENDGRID_API_KEY) {
   sendgridConfigured = true;
   
   console.log('✅ SendGrid configured successfully');
-  console.log(`📧 Emails will be sent from: ${process.env.SENDGRID_FROM_EMAIL || 'Not set - using default'}`);
+  console.log(`📧 Emails will be sent from: ${process.env.SENDGRID_FROM_EMAIL || 'Not set'}`);
 } else {
   console.warn('⚠️  No email service configured. Set SENDGRID_API_KEY in .env file');
   console.warn('💡 To get your SendGrid API key:');
@@ -540,6 +541,13 @@ if (process.env.SENDGRID_API_KEY) {
 app.post('/api/send-ticket', authenticateToken, async (req, res) => {
   try {
     const { ticketId, userEmail, message, subject, isClientEmail = false, isUpdate = false } = req.body;
+    console.log('[send-ticket] Incoming request', {
+      ticketId,
+      userEmail,
+      isClientEmail,
+      isUpdate,
+      requestedBy: req.user?.email || req.user?.id || 'unknown',
+    });
 
     if (!ticketId) {
       return res.status(400).json({
@@ -702,9 +710,17 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
       });
     }
 
+    const senderEmail = process.env.SENDGRID_FROM_EMAIL;
+    if (!senderEmail) {
+      return res.status(500).json({
+        success: false,
+        message: 'SENDGRID_FROM_EMAIL manquant. Utilisez une adresse expéditeur vérifiée dans SendGrid.'
+      });
+    }
+
     const mailOptions = {
       from: {
-        email: process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_USER || 'noreply@example.com',
+        email: senderEmail,
         name: 'ASBU Support Center'
       },
       to: userEmail,
@@ -726,9 +742,15 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
 
     // Envoyer l'email avec SendGrid
     try {
+      console.log('[send-ticket] Sending via SendGrid', {
+        from: senderEmail,
+        to: userEmail,
+        subject: subjectToSend,
+      });
       const response = await sgMail.send(mailOptions);
       console.log('✅ Email sent successfully via SendGrid');
       console.log('Status Code:', response[0].statusCode);
+      console.log('[send-ticket] SendGrid response headers:', response[0].headers);
       return res.json({
         success: true,
         message: 'Email envoyé avec succès',
@@ -736,6 +758,11 @@ app.post('/api/send-ticket', authenticateToken, async (req, res) => {
       });
     } catch (emailError) {
       console.error('❌ Erreur lors de l\'envoi de l\'email:', emailError?.code || emailError?.message || emailError);
+      console.error('[send-ticket] Failed email context', {
+        from: senderEmail,
+        to: userEmail,
+        subject: subjectToSend,
+      });
       if (emailError.response) {
         console.error('SendGrid Error Details:', emailError.response.body);
       }

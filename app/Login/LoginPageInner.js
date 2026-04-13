@@ -1,7 +1,6 @@
 "use client"
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
@@ -13,14 +12,23 @@ export default function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo');
+  const hasSupabaseConfig = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
 
   // Utilise le helper pour créer le client Supabase côté client
-  const supabase = createClientComponentClient();
+  const supabase = hasSupabaseConfig ? createClientComponentClient() : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
+
+    if (!supabase) {
+      setError("Configuration Supabase manquante. Ajoutez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -82,6 +90,11 @@ export default function LoginPageInner() {
           {error && (
             <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
               {error}
+            </div>
+          )}
+          {!hasSupabaseConfig && (
+            <div className="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
+              Supabase n&apos;est pas configure. Ajoutez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY.
             </div>
           )}
           <form className="space-y-4" onSubmit={handleSubmit}>

@@ -133,27 +133,60 @@ export default function CreateTicket() {
       const ticketId = Array.isArray(backendResponse) ? backendResponse[0]?.id : backendResponse?.id;
       if (!ticketId) throw new Error("Unable to retrieve the created ticket ID");
       
-      // Send emails in background (non-blocking)
+      // Send notification emails and wait for completion before redirect.
+      // This avoids browser navigation interrupting one of the requests.
+      const emailTasks = [];
       if (ticket.clientEmail) {
-        void sendTicketNotificationEmail(
+        emailTasks.push({
+          recipient: ticket.clientEmail,
+          kind: 'client',
+          promise: sendTicketNotificationEmail(
+            ticketId,
+            ticket.clientEmail,
+            token,
+            null,
+            null,
+            true
+          ),
+        });
+      }
+      const adminEmail = "yousfin027@gmail.com";//support@asbumenos.net//yousfin027@gmail.com
+      emailTasks.push({
+        recipient: adminEmail,
+        kind: 'admin',
+        promise: sendTicketNotificationEmail(
           ticketId,
-          ticket.clientEmail,
+          adminEmail,
           token,
           null,
           null,
-          true
-        ).catch((emailError) => console.error('Error while sending email to client:', emailError));
+          false
+        ),
+      });
+
+      console.log('Email notifications queued:', emailTasks.map((task) => ({
+        recipient: task.recipient,
+        kind: task.kind,
+      })));
+
+      const emailResults = await Promise.allSettled(emailTasks.map((task) => task.promise));
+      emailResults.forEach((result, index) => {
+        const task = emailTasks[index];
+        if (result.status === 'fulfilled') {
+          console.log(`Email ${task.kind} sent successfully to ${task.recipient}:`, result.value);
+        } else {
+          console.error(`Email ${task.kind} failed for ${task.recipient}:`, result.reason);
+        }
+      });
+
+      const emailFailures = emailResults.filter((result) => result.status === 'rejected');
+      if (emailFailures.length > 0) {
+        console.error('One or more email notifications failed:', emailFailures);
+        setMessage({ type: 'error', text: 'Ticket created, but one or more notification emails failed.' });
+      } else {
+        setMessage({ type: 'success', text: 'Ticket created successfully!' });
       }
-      void sendTicketNotificationEmail(
-        ticketId,
-        "support@asbumenos.net",//support@asbumenos.net
-        token,
-        null,
-        null,
-        false
-      ).catch((emailError) => console.error('Error while sending email to admin:', emailError));
       
-      setMessage({ type: 'success', text: 'Ticket created successfully!' });
       setTimeout(() => {
         router.push('/dashboard/tickets');
       }, 2000);
