@@ -1,4 +1,4 @@
-const API_URL ='http://localhost:10000';//http://localhost:10000
+const API_URL ='https://gestion-ticket-back-78nj.onrender.com';//http://localhost:10000
 //https://gestion-ticket-back-78nj.onrender.com
 export async function Login(email, password) {
   console.log("-ok",localStorage.getItem("token"))
