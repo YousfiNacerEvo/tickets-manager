@@ -4,12 +4,14 @@ import TicketDetails from './TicketDetails';
 import Link from 'next/link';
 
 export default async function TicketPage({ params }) {
+  const { id } = await params;
   // Récupérer le token dans les cookies côté serveur
-  const token = cookies().get('token')?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
   console.log('TOKEN SERVEUR:', token); // <-- Ce log s'affichera dans le terminal
 
   if (!token) {
-    const ticketUrl = `https://tickets-manager-kappa.vercel.app/dashboard/tickets/${params.id}`;
+    const ticketUrl = `https://tickets-manager-kappa.vercel.app/dashboard/tickets/${id}`;
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-5xl mx-auto">
@@ -25,7 +27,7 @@ export default async function TicketPage({ params }) {
   }
 
   try {
-    const ticket = await getTicketById(params.id, token);
+    const ticket = await getTicketById(id, token);
     return <TicketDetails ticket={ticket} />;
   } catch (error) {
     return (
